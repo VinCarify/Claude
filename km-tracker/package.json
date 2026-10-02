@@ -1,0 +1,15 @@
+{
+  "name": "km-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Passwortgeschütztes KM-Tracking-Dashboard (statische Seite + eine Netlify Function).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "e2e": "node test/e2e.mjs",
+    "dev": "node scripts/dev-server.mjs"
+  }
+}

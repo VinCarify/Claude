@@ -7,3 +7,5 @@ Demo Van Elektro,completed,Gina,Grace,3,OPTIMUM,2026-05-28,XX000004,demo-vehicle
 Demo Van Elektro,on_lease,Gina,Grace,6,OPTIMUM,,XX000004,demo-vehicle-4,10,25000,2026-05-28,1500,DEMOVIN0000000004,,2026-10-01,9000,midpoint,,700
 Demo Cabrio 1.4,on_lease,Lea,Leer,12,PREMIUM,,XX000005,demo-vehicle-5,50,70000,2026-09-20,1000,DEMOVIN0000000005,,,,,,2600
 Demo Limousine V8,on_lease,Gustav,Gross,24,PREMIUM,,XX000006,demo-vehicle-6,100,150000,2025-02-01,5000,DEMOVIN0000000006,,2026-09-30,100000,midpoint,,4800
+Demo Roadster 2.0,on_lease,Nina,Neu,12,BUDGET,,XX000007,demo-vehicle-7,30,40000,2026-10-02,1000,DEMOVIN0000000007,,2026-10-02,30,handover,,990
+Demo Kompakt 1.6,notice_given,Paul,Probe,12,BUDGET,2026-09-30,XX000008,demo-vehicle-8,100,30000,2025-01-10,1000,DEMOVIN0000000008,,2026-09-29,25000,midpoint,,900

@@ -1,0 +1,11 @@
+vehicle,plate,status,insurance,km_package,min_duration_months,min_duration_left,months_elapsed,monthly_price_chf,handover_date,handover_km,segment_start,min_term_end,checkpoint_date,checkpoint_type,current_km,driven_km,included_km,diff_km,extra_km_price_rp,extra_km_cost_chf,deposit_chf,open_extra_km,avg_km_month,projected_km_end,included_km_end,projected_diff_end,projected_cost_end_chf,recommended_package
+Demo Kombi 1.5 Automatik,XX 000 011,on_lease,BASIC,1000,24,13,11,899,45962,3500,45962,46692,46291,midpoint,11900,8400,14800,-2900,55,0,0,-2900,777,22148,27800,-5652,0,1000
+Demo Stromer Long Range,XX 000 012,on_lease,PREMIUM,1000,12,4,8,1101,46054,5000,46054,46419,46295,midpoint,15400,10400,13000,2400,79,1896,500,1768,1313,20756,17000,3756,2967,1500
+Demo Cabrio 1.0 Turbo,XX 000 013,notice_given,BASIC,2000,6,4,2,749,46254,30,46254,46438,,,,,4030,,49,,0,,,,12030,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,

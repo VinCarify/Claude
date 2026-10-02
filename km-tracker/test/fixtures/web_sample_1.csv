@@ -1,0 +1,11 @@
+vehicle,plate,status,insurance,km_package,min_duration_months,min_duration_left,months_elapsed,monthly_price_chf,handover_date,handover_km,segment_start,min_term_end,checkpoint_date,checkpoint_type,current_km,driven_km,included_km,diff_km,extra_km_price_rp,extra_km_cost_chf,deposit_chf,open_extra_km,avg_km_month,projected_km_end,included_km_end,projected_diff_end,projected_cost_end_chf,recommended_package
+Demo SUV 2.0 Automatik,XX 000 001,on_lease,PREMIUM,1500,12,5,7,1193,46096,12000,46096,46461,46293,midpoint,20460,8460,22500,-2040,73,0,0,-2040,1307,27680,30000,-2320,0,1500
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,

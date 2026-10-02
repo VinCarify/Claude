@@ -1,0 +1,13 @@
+node_modules
+.netlify
+*.xlsx
+
+# Python bytecode (sheet/ tests)
+__pycache__/
+*.pyc
+
+# Local secrets (SHEET_CSV_URL, DASHBOARD_PASSWORD) – never commit
+.env
+.env.*
+!.env.example
+sheet/tariffs.local.json

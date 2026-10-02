@@ -1,0 +1,11 @@
+vehicle,plate,status,insurance,km_package,min_duration_months,min_duration_left,months_elapsed,monthly_price_chf,handover_date,handover_km,segment_start,min_term_end,checkpoint_date,checkpoint_type,current_km,driven_km,included_km,diff_km,extra_km_price_rp,extra_km_cost_chf,deposit_chf,open_extra_km,avg_km_month,projected_km_end,included_km_end,projected_diff_end,projected_cost_end_chf,recommended_package
+Demo Van 2.2 Diesel,XX 000 021,on_lease,BASIC,5000,12,3,9,1290,46054,60000,46054,46419,46295,midpoint,112000,52000,105000,7000,32,2240,0,7000,5778,138500,120000,18500,5920,5000
+Demo Coupe 2.0 Turbo,XX 000 022,on_lease,PREMIUM,1000,12,5,7,1050,46113,20000,46113,46478,46295,midpoint,27000,7000,27000,0,60,0,0,0,1000,32000,32000,0,0,1000
+Demo Kompakt 1.0,XX 000 023,on_lease,BASIC,1000,6,1,5,690,46174,5000,46174,46357,46295,midpoint,10500,5500,10000,500,80,400,500,-125,1100,12700,11000,1700,1360,1500
+Demo Limousine 3.0 Hybrid,XX 000 024,on_lease,PREMIUM,1500,12,0,34,1490,45292,1000,45292,45658,46280,midpoint,50000,49000,52000,-2000,70,0,0,-2000,1485,50000,52000,-2000,0,1500
+Demo Pickup 2.4 Allrad,XX 000 025,notice_given,BASIC,2000,12,9,3,980,46235,140000,46235,46600,46278,midpoint,143000,3000,146000,-3000,45,0,0,-3000,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,
