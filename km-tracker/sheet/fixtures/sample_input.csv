@@ -1,0 +1,9 @@
+vehicle,subscription_status,first_name,last_name,minimum_duration_months,insurance_package_type,cancellation_date,license_plate_number,vehicle_id,start_odometer,s_listing,handover_date,km,vin_number,total_km_adjustment,checkpoint_date,current_odometer,checkpoint_type,deposit_amount_total,monthly_price
+Demo Kombi 1.5 Automatik,on_lease,Max,Muster,12,PREMIUM,,XX000001,demo-vehicle-1,120,45000,2026-04-15,2500,DEMOVIN0000000001,300,2026-09-28,21000,midpoint,0,1290
+Demo Kombi 1.5 Automatik,completed,Max,Muster,24,PREMIUM,2026-04-15,XX000001,demo-vehicle-1,,45000,2025-06-15,2000,DEMOVIN0000000001,,,,,,1150
+Demo SUV 2.0 4x4,on_lease,Erika,Beispiel,6,OPTIMUM,,XX000002,demo-vehicle-2,5,120000,2026-07-01T00:00:00,1000,DEMOVIN0000000002,,2026-09-30T00:00:00,4100.0,midpoint,500,1890.0
+Demo Kleinwagen 1.0,notice_given,Tom,Test,12,BUDGET,,XX000003,demo-vehicle-3,15000,30000,2025-01-10,1750,DEMOVIN0000000003,0,2026-09-01,50000,midpoint,,950
+Demo Van Elektro,completed,Gina,Grace,3,OPTIMUM,2026-05-28,XX000004,demo-vehicle-4,10,25000,2026-03-01,1000,DEMOVIN0000000004,,,,,,700
+Demo Van Elektro,on_lease,Gina,Grace,6,OPTIMUM,,XX000004,demo-vehicle-4,10,25000,2026-05-28,1500,DEMOVIN0000000004,,2026-10-01,9000,midpoint,,700
+Demo Cabrio 1.4,on_lease,Lea,Leer,12,PREMIUM,,XX000005,demo-vehicle-5,50,70000,2026-09-20,1000,DEMOVIN0000000005,,,,,,2600
+Demo Limousine V8,on_lease,Gustav,Gross,24,PREMIUM,,XX000006,demo-vehicle-6,100,150000,2025-02-01,5000,DEMOVIN0000000006,,2026-09-30,100000,midpoint,,4800

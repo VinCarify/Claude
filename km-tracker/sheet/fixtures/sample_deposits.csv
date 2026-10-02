@@ -1,0 +1,6 @@
+deposit_id,time_dim,amount,payment_due_date,refunded_amount,refund_date,subscription_id,subscription_status,return_date,customer_name,company_name,stripe_invoice_id,reference,comments,status,reason,license_plate_number
+dep-1,2026-07-01,500,2026-07-05,,,demo-sub-2,on_lease,,Demo Kundin,,demo-inv-1,,,Paid,Extra KM,XX000002
+dep-2,2026-07-01,"250,5",2026-07-05,,,demo-sub-2,on_lease,,Demo Kundin,,demo-inv-2,,,Paid,Extra KM,XX000002
+dep-3,2026-05-01,800,2026-05-05,,,demo-sub-1,on_lease,,Demo Kunde,,demo-inv-3,,,Open,Extra KM,XX000001
+dep-4,2026-05-01,900,2026-05-05,,,demo-sub-1,on_lease,,Demo Kunde,,demo-inv-4,,,Paid,Damage,XX000001
+dep-5,2025-02-01,300,2025-02-05,,,demo-sub-3,completed,,Demo Kunde,,demo-inv-5,,,Paid,Extra KM,XX000003
