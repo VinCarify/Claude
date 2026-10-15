@@ -29,15 +29,14 @@ Das Repo ist **öffentlich**. Darum genau so einrichten:
    | Variable             | Pflicht | Inhalt                                               |
    | -------------------- | ------- | ---------------------------------------------------- |
    | `SHEET_CSV_URL`      | ja      | Veröffentlichte CSV-URL des Tabs `web`               |
-   | `DASHBOARD_PASSWORD` | ja      | Gemeinsames Passwort, mind. 16 Zeichen, zufällig     |
+   | `DASHBOARD_PASSWORD` | ja      | Gemeinsames Passwort (frei wählbar)                  |
    | `DASHBOARD_TITLE`    | nein    | Titel im Header nach dem Login                       |
    | `CONTACT_EMAIL`      | nein    | Adresse für die «Schreib uns»-Links                  |
 
    - `SHEET_CSV_URL` und `DASHBOARD_PASSWORD` als **Secret** markieren und **nur für den Context
      «Production»** setzen, nicht für Deploy Previews oder Branch Deploys.
    - Die CSV-URL ist wie ein Schlüssel zu den Daten: nirgends posten, nicht ins Repo.
-4. **Passwort:** lang und zufällig, z. B. `openssl rand -base64 24`. Kürzer als 16 Zeichen lehnt die
-   Function ab (`500 not_configured`). Bei Verdacht sofort wechseln.
+4. **Passwort:** frei wählbar, nur in Netlify setzen (nie ins Repo). Nach jeder Änderung neu deployen.
 5. **Deploy Previews von Forks:** auf «Require approval» oder ganz aus stellen
    (Site configuration → Build & deploy → Deploy Previews). Ein Fork-PR kann `data.mjs` ändern.
    Die Function liefert ausserhalb von `production` (und `netlify dev`) zwar keine Daten, aber nur die

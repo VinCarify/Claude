@@ -323,14 +323,12 @@ describe("handler", () => {
     assert.equal(fetchCalls.length, 0);
   });
 
-  test("500 not_configured for a weak (too short) password – even if it matches", async () => {
-    stubFetch(() => csvResponse("vehicle,plate\n"));
-    const weak = "x".repeat(MIN_PASSWORD_LENGTH - 1);
-    process.env.DASHBOARD_PASSWORD = weak;
-    const res = await handler(request("GET", `Bearer ${weak}`));
-    assert.equal(res.status, 500);
-    assert.deepEqual(await res.json(), { error: "not_configured" });
-    assert.equal(fetchCalls.length, 0);
+  test("accepts a short password set in Netlify (e.g. 8 chars)", async () => {
+    const csv = await fixture("web_sample_1.csv");
+    stubFetch(() => csvResponse(csv));
+    process.env.DASHBOARD_PASSWORD = "demo1234";
+    const res = await handler(request("GET", "Bearer demo1234"));
+    assert.equal(res.status, 200);
   });
 
   test("only serves data in production / dev deploy contexts", async () => {

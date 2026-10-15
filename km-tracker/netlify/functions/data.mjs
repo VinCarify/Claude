@@ -5,8 +5,7 @@
 //
 // Env vars:
 //   SHEET_CSV_URL       (required) published CSV URL of the sheet tab "web"
-//   DASHBOARD_PASSWORD  (required) shared dashboard password, at least 16 characters
-//                       (long + random; shorter values are refused as "not_configured")
+//   DASHBOARD_PASSWORD  (required) shared dashboard password, set in Netlify
 //   DASHBOARD_TITLE     (optional) header title shown after login
 //   CONTACT_EMAIL       (optional) used for the mailto link in the tip box
 //
@@ -60,7 +59,7 @@ const MAX_VEHICLES = 50;
 const FETCH_TIMEOUT_MS = 8000;
 const CACHE_TTL_MS = 60_000;
 const FAIL_DELAY_MS = 400;
-export const MIN_PASSWORD_LENGTH = 16;
+export const MIN_PASSWORD_LENGTH = 1;
 // Deploy contexts that may serve data ("dev" = netlify dev). Unknown/absent
 // context (local dev server, tests) is allowed.
 const ALLOWED_CONTEXTS = new Set(["production", "dev"]);

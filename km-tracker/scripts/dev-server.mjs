@@ -4,7 +4,7 @@
 //   - mounts netlify/functions/data.mjs at its configured path (/api/data)
 //
 // Usage:
-//   node scripts/dev-server.mjs [--port 8888] [--password <min. 16 Zeichen>] [--fixture test/fixtures/web_sample_3.csv]
+//   node scripts/dev-server.mjs [--port 8888] [--password <passwort>] [--fixture test/fixtures/web_sample_3.csv]
 //                               [--title "KM-Tracking"] [--contact <e-mail>]
 //
 // Env vars (CLI flags win): PORT, HOST, DASHBOARD_PASSWORD, DASHBOARD_TITLE, CONTACT_EMAIL,
@@ -42,7 +42,7 @@ if (args.contact) process.env.CONTACT_EMAIL = args.contact;
 if (args.sheet) process.env.SHEET_CSV_URL = args.sheet;
 if (args.fixture) process.env.FIXTURE_CSV = args.fixture;
 
-const DEV_PASSWORD = "lokal-demo-passwort"; // local only – the function refuses < 16 chars
+const DEV_PASSWORD = "lokal-demo-passwort"; // local only
 if (!process.env.DASHBOARD_PASSWORD) {
   process.env.DASHBOARD_PASSWORD = DEV_PASSWORD;
   console.log(`[dev] DASHBOARD_PASSWORD not set – using "${DEV_PASSWORD}"`);
