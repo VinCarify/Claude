@@ -310,7 +310,7 @@ describe("handler", () => {
     let res = await handler(request("GET", `Bearer ${PASSWORD}`));
     assert.equal(res.status, 500);
     let text = await res.text();
-    assert.deepEqual(JSON.parse(text), { error: "not_configured" });
+    assert.deepEqual(JSON.parse(text), { error: "not_configured", detail: "missing_password" });
     assert.equal(text.includes(SHEET_URL), false);
 
     process.env.DASHBOARD_PASSWORD = PASSWORD;
@@ -318,7 +318,7 @@ describe("handler", () => {
     res = await handler(request("GET", `Bearer ${PASSWORD}`));
     assert.equal(res.status, 500);
     text = await res.text();
-    assert.deepEqual(JSON.parse(text), { error: "not_configured" });
+    assert.deepEqual(JSON.parse(text), { error: "not_configured", detail: "missing_sheet_url" });
     assert.equal(text.includes(PASSWORD), false);
     assert.equal(fetchCalls.length, 0);
   });
@@ -338,7 +338,7 @@ describe("handler", () => {
     for (const ctx of ["deploy-preview", "branch-deploy"]) {
       const res = await handler(request("GET", auth), { deploy: { context: ctx } });
       assert.equal(res.status, 500, ctx);
-      assert.deepEqual(await res.json(), { error: "not_configured" });
+      assert.deepEqual(await res.json(), { error: "not_configured", detail: `context_${ctx}` });
     }
     process.env.CONTEXT = "deploy-preview";
     assert.equal((await handler(request("GET", auth))).status, 500, "CONTEXT env var");
@@ -355,7 +355,7 @@ describe("handler", () => {
     stubFetch(() => csvResponse("boom", 500));
     const res = await handler(request("GET", `Bearer ${PASSWORD}`));
     assert.equal(res.status, 502);
-    assert.deepEqual(await res.json(), { error: "upstream" });
+    assert.deepEqual(await res.json(), { error: "upstream", detail: "upstream_status_500" });
   });
 
   test("502 when upstream throws (network / timeout)", async () => {
@@ -364,18 +364,20 @@ describe("handler", () => {
     });
     const res = await handler(request("GET", `Bearer ${PASSWORD}`));
     assert.equal(res.status, 502);
-    assert.deepEqual(await res.json(), { error: "upstream" });
+    assert.deepEqual(await res.json(), { error: "upstream", detail: "upstream_fetch" });
   });
 
   test("502 when upstream returns HTML or an unexpected header", async () => {
     stubFetch(() => csvResponse("<!doctype html><title>Sign in</title>"));
     let res = await handler(request("GET", `Bearer ${PASSWORD}`));
     assert.equal(res.status, 502);
+    assert.equal((await res.json()).detail, "upstream_html");
 
     resetCache();
     stubFetch(() => csvResponse("foo,bar\n1,2\n"));
     res = await handler(request("GET", `Bearer ${PASSWORD}`));
     assert.equal(res.status, 502);
+    assert.equal((await res.json()).detail, "csv_header");
   });
 
   test("caches upstream data for subsequent requests", async () => {

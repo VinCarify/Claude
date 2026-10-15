@@ -185,7 +185,17 @@
     }
     if (res.status === 401) return { kind: "unauthorized" };
     if (res.status === 429) return { kind: "limited" };
-    if (!res.ok) return { kind: "error", status: res.status };
+    if (!res.ok) {
+      let detail = res.status === 404 ? "no_function" : "";
+      try {
+        const body = await res.json();
+        if (body && typeof body.detail === "string") detail = body.detail;
+        else if (body && body.error === "not_configured") detail = detail || "not_configured";
+      } catch {
+        /* non-JSON error page */
+      }
+      return { kind: "error", status: res.status, detail };
+    }
     try {
       const data = await res.json();
       if (!data || !Array.isArray(data.vehicles)) throw new Error("shape");
@@ -282,10 +292,31 @@
     showError(failureText(result));
   }
 
+  // Setup hints for the CARIFY team (no secret values involved).
+  const HINTS = {
+    missing_password: "In Netlify fehlt die Variable DASHBOARD_PASSWORD (Scope Functions) – danach neu deployen.",
+    missing_sheet_url: "In Netlify fehlt die Variable SHEET_CSV_URL (Scope Functions) – danach neu deployen.",
+    not_configured: "Netlify-Variablen fehlen – danach neu deployen.",
+    no_function: "Die Netlify Function /api/data ist nicht deployed (Deploy-Log → Functions prüfen).",
+    upstream_html: "Der Sheet-Link liefert keine CSV. Tab «web» als CSV im Web veröffentlichen und diesen Link nutzen.",
+    csv_header: "Der Sheet-Link zeigt nicht auf den Tab «web». Beim Veröffentlichen nur Tab «web» + CSV wählen.",
+    upstream_timeout: "Das Google Sheet antwortet nicht rechtzeitig.",
+    upstream_fetch: "Das Google Sheet ist nicht erreichbar – stimmt SHEET_CSV_URL?",
+  };
+
   function failureText(result) {
     if (result.kind === "offline") return TEXT.offline;
     if (result.kind === "limited") return TEXT.limited;
-    return TEXT.generic;
+    const d = result.detail || "";
+    let hint = HINTS[d];
+    if (!hint && d.startsWith("context_")) {
+      hint = `Dieser Deploy läuft als «${d.slice(8)}». Daten gibt es nur im Production-Deploy (Production branch prüfen).`;
+    }
+    if (!hint && d.startsWith("upstream_status_")) {
+      hint = `Der Sheet-Link antwortet mit Fehler ${d.slice(16)} – Link prüfen bzw. Tab «web» neu veröffentlichen.`;
+    }
+    if (!hint && result.status) hint = `Fehlercode ${result.status}.`;
+    return hint ? `${TEXT.generic} (Hinweis: ${hint})` : TEXT.generic;
   }
 
   form.addEventListener("submit", async (event) => {

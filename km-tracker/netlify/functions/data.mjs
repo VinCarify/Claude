@@ -268,6 +268,14 @@ function json(status, body, extraHeaders = {}) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Short, value-free reason for a failed sheet fetch (shown to logged-in users). */
+function upstreamReason(err) {
+  const msg = String(err?.message || "");
+  if (/^upstream_status_\d+$/.test(msg) || msg === "upstream_html" || msg === "csv_header") return msg;
+  if (err?.name === "TimeoutError" || err?.name === "AbortError") return "upstream_timeout";
+  return "upstream_fetch";
+}
+
 function deployContext(context) {
   const value = context?.deploy?.context ?? process.env.CONTEXT;
   return typeof value === "string" && value !== "" ? value : null;
@@ -286,12 +294,16 @@ export default async function handler(req, context) {
 
   const sheetUrl = process.env.SHEET_CSV_URL;
   const password = process.env.DASHBOARD_PASSWORD;
-  if (!sheetUrl || !password || password.length < MIN_PASSWORD_LENGTH) {
-    return json(500, { error: "not_configured" });
+  // `detail` names only WHAT is missing (never a value) so setup problems are fixable.
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    return json(500, { error: "not_configured", detail: "missing_password" });
+  }
+  if (!sheetUrl) {
+    return json(500, { error: "not_configured", detail: "missing_sheet_url" });
   }
   const ctx = deployContext(context);
   if (ctx && !ALLOWED_CONTEXTS.has(ctx)) {
-    return json(500, { error: "not_configured" });
+    return json(500, { error: "not_configured", detail: `context_${ctx}` });
   }
 
   if (!checkAuth(req.headers.get("authorization"), password)) {
@@ -302,8 +314,8 @@ export default async function handler(req, context) {
   let data;
   try {
     data = await loadVehicles(sheetUrl);
-  } catch {
-    return json(502, { error: "upstream" });
+  } catch (err) {
+    return json(502, { error: "upstream", detail: upstreamReason(err) });
   }
 
   const title = (process.env.DASHBOARD_TITLE || "").trim() || "KM-Tracking";
