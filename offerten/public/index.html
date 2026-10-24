@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="CARIFY Offerten & Verträge: Offerten und Verträge für Geschäftskunden im CARIFY-Design.">
+  <title>CARIFY · Offerten & Verträge</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="document.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="lib/format.js" defer></script>
+  <script src="lib/defaults.js" defer></script>
+  <script src="lib/model.js" defer></script>
+  <script src="lib/render.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#editor">Zum Formular springen</a>
+
+  <header class="app-header">
+    <div class="app-brand">
+      <span class="app-logo" aria-hidden="true">CARIFY</span>
+      <span class="app-name">Offerten & Verträge</span>
+    </div>
+    <div class="app-actions">
+      <span class="save-state" id="save-state" role="status" aria-live="polite"></span>
+      <div class="menu" id="new-menu">
+        <button type="button" class="btn btn-primary" id="new-button" aria-haspopup="true" aria-expanded="false" aria-controls="new-menu-list">
+          <span aria-hidden="true">＋</span> Neu
+        </button>
+        <div class="menu-list" id="new-menu-list" role="menu" hidden>
+          <button type="button" role="menuitem" data-new="offer">
+            <strong>Offerte</strong><span>Deckblatt, Brief, Preistabelle</span>
+          </button>
+          <button type="button" role="menuitem" data-new="contract">
+            <strong>Vertrag</strong><span>Auto-Abo Vertrag, Anpassung, Übernahme</span>
+          </button>
+        </div>
+      </div>
+      <button type="button" class="btn" id="drafts-button">Entwürfe <span class="count" id="drafts-count"></span></button>
+      <button type="button" class="btn btn-icon" id="settings-button" aria-label="Einstellungen" title="Einstellungen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A7.6 7.6 0 0 0 7 6.5l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 2.6-1.5l2.4 1 2-3.4z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="banner" id="setup-banner" hidden>
+    <p><strong>Willkommen!</strong> Lade einmal eure CARIFY-Einstellungen (JSON-Datei) – dann sind Adresse, Team, Texte und Logo drin. Alles bleibt in diesem Browser.</p>
+    <div class="banner-actions">
+      <button type="button" class="btn btn-primary" id="banner-import">Einstellungen importieren</button>
+      <button type="button" class="btn btn-ghost" id="banner-settings">Selbst erfassen</button>
+    </div>
+  </div>
+
+  <div class="view-tabs" role="tablist" aria-label="Ansicht">
+    <button type="button" role="tab" id="tab-edit" aria-selected="true" aria-controls="editor">Bearbeiten</button>
+    <button type="button" role="tab" id="tab-preview" aria-selected="false" aria-controls="preview">Vorschau</button>
+  </div>
+
+  <main class="workspace" id="workspace">
+    <section class="editor" id="editor" tabindex="-1" aria-label="Dokument bearbeiten"></section>
+
+    <section class="preview" id="preview" aria-label="Vorschau">
+      <div class="preview-toolbar">
+        <div class="preview-info">
+          <strong id="doc-filename">–</strong>
+          <span id="page-count"></span>
+        </div>
+        <div class="preview-actions">
+          <button type="button" class="btn" id="contract-from-offer" hidden>Vertrag erstellen</button>
+          <button type="button" class="btn" id="email-button">E-Mail-Text</button>
+          <button type="button" class="btn btn-primary" id="print-button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5M4.5 16.5v3h15v-3"/></svg>
+            PDF erstellen
+          </button>
+        </div>
+      </div>
+      <div class="preview-stage" id="preview-stage">
+        <div class="preview-scaler" id="preview-scaler">
+          <div class="doc" id="doc-root"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Dialogs -->
+  <dialog class="dialog" id="drafts-dialog" aria-labelledby="drafts-title">
+    <form method="dialog" class="dialog-head">
+      <h2 id="drafts-title">Entwürfe</h2>
+      <button class="btn btn-icon" value="close" aria-label="Schliessen">✕</button>
+    </form>
+    <div class="dialog-body">
+      <label class="field">
+        <span class="field-label">Suchen</span>
+        <input type="search" id="drafts-search" class="input" placeholder="Firma, Name, Dokument …" autocomplete="off">
+      </label>
+      <ul class="draft-list" id="draft-list"></ul>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn btn-ghost" id="drafts-export">Backup exportieren</button>
+      <button type="button" class="btn btn-ghost" id="drafts-import">Backup importieren</button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog" id="contract-dialog" aria-labelledby="contract-title">
+    <form method="dialog" class="dialog-head">
+      <h2 id="contract-title">Vertrag aus Offerte erstellen</h2>
+      <button class="btn btn-icon" value="close" aria-label="Schliessen">✕</button>
+    </form>
+    <div class="dialog-body">
+      <p class="hint">Welche Variante hat der Kunde gewählt? Kunde, Fahrzeug, KM-Package, Laufzeit und Aborate werden übernommen.</p>
+      <div class="option-list" id="contract-options"></div>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn btn-primary" id="contract-create" disabled>Vertrag erstellen</button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog" id="email-dialog" aria-labelledby="email-title">
+    <form method="dialog" class="dialog-head">
+      <h2 id="email-title">E-Mail-Text</h2>
+      <button class="btn btn-icon" value="close" aria-label="Schliessen">✕</button>
+    </form>
+    <div class="dialog-body">
+      <label class="field" id="email-template-field">
+        <span class="field-label">Vorlage</span>
+        <select class="input" id="email-template">
+          <option value="send">Offerte senden</option>
+          <option value="followup">Nachfassen</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Betreff</span>
+        <input type="text" class="input" id="email-subject">
+      </label>
+      <label class="field">
+        <span class="field-label">Text</span>
+        <textarea class="input" id="email-body" rows="12"></textarea>
+      </label>
+      <p class="hint">Tipp: zuerst das PDF erstellen und dann im Mail anhängen.</p>
+    </div>
+    <div class="dialog-foot">
+      <a class="btn btn-ghost" id="email-open" href="#">Im Mailprogramm öffnen</a>
+      <button type="button" class="btn btn-primary" id="email-copy">Text kopieren</button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog dialog-wide" id="settings-dialog" aria-labelledby="settings-title">
+    <form method="dialog" class="dialog-head">
+      <h2 id="settings-title">Einstellungen</h2>
+      <button class="btn btn-icon" value="close" aria-label="Schliessen">✕</button>
+    </form>
+    <div class="settings-layout">
+      <nav class="settings-tabs" id="settings-tabs" role="tablist" aria-label="Einstellungen"></nav>
+      <div class="dialog-body settings-body" id="settings-body"></div>
+    </div>
+  </dialog>
+
+  <input type="file" id="file-input" accept=".json,application/json" hidden>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <noscript><p class="noscript">Für die Offerten-App brauchst du JavaScript.</p></noscript>
+</body>
+</html>
