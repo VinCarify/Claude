@@ -1,8 +1,9 @@
 // CARIFY Offerten & Verträge – neutral default settings.
 //
 // The repository is public: no company data lives here (no address, no prices, no references,
-// no contract clauses). Everything below is generic placeholder copy. The real CARIFY settings
-// are imported once per browser from a private JSON file (Einstellungen → Importieren).
+// none of CARIFY's own contract or offer wording). Everything below is generic copy written for
+// this app. The real CARIFY settings and texts are imported once per browser from a private JSON
+// file (Einstellungen → Importieren).
 
 "use strict";
 
@@ -100,19 +101,19 @@ globalThis.CarifyDefaults = (function () {
     contractNumberLabel: "Vertrag Nr.",
     contractAdjustmentSuffix: " – Anpassung",
     contractTakeoverSubtitle: "Vertragsanpassung",
-    contractVehiclesIntroAdjustment: "Bezüglich folgender Fahrzeuge von CARIFY:",
-    contractVehiclesIntroTakeover: "Der Abo-Nehmer übernimmt folgende Fahrzeuge:",
+    contractVehiclesIntroAdjustment: "Die Anpassung betrifft diese Fahrzeuge:",
+    contractVehiclesIntroTakeover: "Der Abo-Nehmer übernimmt diese bestehenden Abos:",
     contractFieldStartAdjustment: "Mindestlaufzeit bis",
     contractFieldStartTakeover: "Änderungsdatum",
     contractFieldVehicleId: "Fahrzeug-ID",
     contractEach: "je ",
     contractDownPaymentText: "Die Aborate berücksichtigt eine Anzahlung von **{{betrag}}** ({{mwst}}) und gilt während der Mindestlaufzeit.",
     contractBetween: "zwischen",
-    contractCarifyAlias: "nachstehend „CARIFY“ genannt.",
+    contractCarifyAlias: "im Folgenden „CARIFY“",
     contractCustomerLabel: "Firma / jur. Person\nAnschrift",
-    contractCustomerAlias: "nachstehend „Abo-Nehmer“ genannt.",
+    contractCustomerAlias: "im Folgenden „Abo-Nehmer“",
     contractCustomerNote: "",
-    contractVehiclesIntro: "Der Abo-Nehmer übernimmt folgende Fahrzeuge von CARIFY:",
+    contractVehiclesIntro: "CARIFY stellt dem Abo-Nehmer diese Fahrzeuge zur Verfügung:",
     contractFieldModel: "Fahrzeugmodell",
     contractFieldStart: "Geplanter Abobeginn",
     contractFieldKm: "Kilometer-Package pro Monat",
@@ -123,10 +124,10 @@ globalThis.CarifyDefaults = (function () {
       "Falls Fahrzeuge aus irgendeinem Grund nicht verfügbar sein sollten, bietet CARIFY eine angemessene Ersatzlösung an.",
     contractRateTitle: "Aborate",
     contractRateText:
-      "Für die Fahrzeuge und den Service verrechnet CARIFY eine fahrzeugbezogene monatliche Gebühr. {{aborate_satz}}{{aufpreis_satz}}\n" +
-      "Die Gebühr wird dem Abo-Nehmer monatlich in Rechnung gestellt und ist jeweils zum 1. Tag des Abomonats fällig.\n" +
-      "{{mehrkm_satz}} Die Kündigungsfrist beträgt nach Ablauf der Mindestlaufzeit {{kuendigungsfrist}} zum jeweiligen Abomonatsende.\n" +
-      "Es gelten die Allgemeinen Geschäftsbedingungen (AGB) von CARIFY.",
+      "Fahrzeug und Service sind mit einer monatlichen Aborate pro Fahrzeug abgegolten. {{aborate_satz}}{{aufpreis_satz}}\n" +
+      "CARIFY stellt die Aborate monatlich in Rechnung; sie ist am ersten Tag jedes Abomonats zahlbar.\n" +
+      "{{mehrkm_satz}} Nach der Mindestlaufzeit kann das Abo mit {{kuendigungsfrist}} Frist auf Ende eines Abomonats gekündigt werden.\n" +
+      "Ergänzend gelten die AGB von CARIFY.",
     contractRateOne: "Diese beträgt **{{betrag}} pro Monat** ({{mwst}}).",
     contractRateEach: "Diese beträgt je Fahrzeug **{{betrag}} pro Monat** ({{mwst}}).",
     contractRateGroups: "Diese beträgt je Fahrzeug und Monat ({{mwst}}) {{liste}}.",
@@ -134,8 +135,8 @@ globalThis.CarifyDefaults = (function () {
     contractSurchargeText: "Zuzüglich je Fahrzeug und Monat ({{mwst}}) {{liste}}.",
     contractSurchargeInsurance: "**{{betrag}}** für das Versicherungs-Upgrade",
     contractSurchargePackage: "**{{betrag}}** für das {{paket}}-Paket",
-    contractExtraKmOne: "Mehrkilometer werden bei der Fahrzeugrückgabe mit **{{betrag}} pro km** ({{mwst}}) verrechnet.",
-    contractExtraKmGroups: "Mehrkilometer werden bei der Fahrzeugrückgabe pro km ({{mwst}}) verrechnet: {{liste}}.",
+    contractExtraKmOne: "Zusätzliche Kilometer kosten **{{betrag}} pro km** ({{mwst}}) und werden bei der Rückgabe abgerechnet.",
+    contractExtraKmGroups: "Zusätzliche Kilometer werden bei der Rückgabe pro km ({{mwst}}) abgerechnet: {{liste}}.",
     contractVatExcl: "exkl. MwSt",
     contractVatIncl: "inkl. MwSt",
     listAnd: " und ",
@@ -148,8 +149,7 @@ globalThis.CarifyDefaults = (function () {
     contractSignName: "Name, Vorname",
     contractSignSignature: "Rechtsgültige Unterschrift",
     contractSignSignatureNote: "(zeichnungsberechtigt gemäss Handelsregister)",
-    contractFootnote:
-      "Im Rahmen der Bonitätsprüfung behält sich CARIFY das Recht vor, gegebenenfalls zusätzliche Unterlagen anzufordern.",
+    contractFootnote: "CARIFY kann für die Prüfung der Kreditwürdigkeit weitere Unterlagen verlangen.",
 
 
     // ---- E-Mail (Begleittext zum PDF)
@@ -261,11 +261,11 @@ globalThis.CarifyDefaults = (function () {
     contractEach: "",
     contractDownPaymentText: "La mensualité tient compte d’un acompte de **{{betrag}}** ({{mwst}}) et s’applique pendant la durée minimale.",
     contractBetween: "entre",
-    contractCarifyAlias: "ci-après dénommée « CARIFY ».",
+    contractCarifyAlias: "ci-après « CARIFY »",
     contractCustomerLabel: "Entreprise / pers. morale\nAdresse",
-    contractCustomerAlias: "ci-après dénommée « l’abonné ».",
+    contractCustomerAlias: "ci-après « l’abonné »",
     contractCustomerNote: "",
-    contractVehiclesIntro: "L’abonné reprend les véhicules suivants de CARIFY :",
+    contractVehiclesIntro: "CARIFY met ces véhicules à la disposition de l’abonné :",
     contractFieldModel: "Modèle du véhicule",
     contractFieldStart: "Début prévu de l’abonnement",
     contractFieldKm: "Forfait kilométrique par mois",
@@ -276,9 +276,9 @@ globalThis.CarifyDefaults = (function () {
       "Si des véhicules ne devaient pas être disponibles pour quelque raison que ce soit, CARIFY propose une solution de remplacement appropriée.",
     contractRateTitle: "Mensualité",
     contractRateText:
-      "Pour les véhicules et le service, CARIFY facture une redevance mensuelle par véhicule. {{aborate_satz}}{{aufpreis_satz}}\n" +
-      "La redevance est facturée mensuellement à l’abonné et est due le 1er jour de chaque mois d’abonnement.\n" +
-      "{{mehrkm_satz}} Après la durée minimale, le délai de résiliation est de {{kuendigungsfrist}} pour la fin d’un mois d’abonnement.\n" +
+      "Le véhicule et le service sont couverts par une mensualité par véhicule. {{aborate_satz}}{{aufpreis_satz}}\n" +
+      "CARIFY facture la mensualité chaque mois ; elle est payable le premier jour de chaque mois d’abonnement.\n" +
+      "{{mehrkm_satz}} Après la durée minimale, l’abonnement peut être résilié avec un préavis de {{kuendigungsfrist}} pour la fin d’un mois d’abonnement.\n" +
       "Les conditions générales (CG) de CARIFY s’appliquent.",
     contractRateOne: "Celle-ci s’élève à **{{betrag}} par mois** ({{mwst}}).",
     contractRateEach: "Celle-ci s’élève par véhicule à **{{betrag}} par mois** ({{mwst}}).",
@@ -287,8 +287,8 @@ globalThis.CarifyDefaults = (function () {
     contractSurchargeText: "En sus, par véhicule et par mois ({{mwst}}) : {{liste}}.",
     contractSurchargeInsurance: "**{{betrag}}** pour l’upgrade d’assurance",
     contractSurchargePackage: "**{{betrag}}** pour le package {{paket}}",
-    contractExtraKmOne: "Les kilomètres supplémentaires sont facturés à la restitution du véhicule à **{{betrag}} par km** ({{mwst}}).",
-    contractExtraKmGroups: "Les kilomètres supplémentaires sont facturés à la restitution du véhicule par km ({{mwst}}) : {{liste}}.",
+    contractExtraKmOne: "Chaque kilomètre supplémentaire coûte **{{betrag}}** ({{mwst}}) et est décompté à la restitution.",
+    contractExtraKmGroups: "Les kilomètres supplémentaires sont décomptés par km à la restitution ({{mwst}}) : {{liste}}.",
     contractVatExcl: "hors TVA",
     contractVatIncl: "TVA incluse",
     listAnd: " et ",
@@ -301,8 +301,7 @@ globalThis.CarifyDefaults = (function () {
     contractSignName: "Nom, prénom",
     contractSignSignature: "Signature juridiquement valable",
     contractSignSignatureNote: "(autorisé·e à signer selon le registre du commerce)",
-    contractFootnote:
-      "Dans le cadre de la vérification de solvabilité, CARIFY se réserve le droit de demander des documents supplémentaires.",
+    contractFootnote: "CARIFY peut demander d’autres documents pour vérifier la solvabilité.",
     emailSubjectOffer: "Votre offre CARIFY",
     emailSubjectFollowUp: "Votre offre CARIFY du {{datum}}",
     emailFollowUp:
@@ -403,7 +402,7 @@ globalThis.CarifyDefaults = (function () {
     contractNumberLabel: "Contract no.",
     contractAdjustmentSuffix: " – adjustment",
     contractTakeoverSubtitle: "Contract adjustment",
-    contractVehiclesIntroAdjustment: "Regarding the following vehicles from CARIFY:",
+    contractVehiclesIntroAdjustment: "The adjustment concerns these vehicles:",
     contractVehiclesIntroTakeover: "The Subscriber takes over the following vehicles:",
     contractFieldStartAdjustment: "Minimum term until",
     contractFieldStartTakeover: "Date of change",
@@ -411,11 +410,11 @@ globalThis.CarifyDefaults = (function () {
     contractEach: "",
     contractDownPaymentText: "The fee takes into account a down payment of **{{betrag}}** ({{mwst}}) and applies during the minimum term.",
     contractBetween: "between",
-    contractCarifyAlias: "hereinafter referred to as “CARIFY”.",
+    contractCarifyAlias: "“CARIFY” in the following",
     contractCustomerLabel: "Company / legal person\nAddress",
-    contractCustomerAlias: "hereinafter referred to as “Subscriber”.",
+    contractCustomerAlias: "the “Subscriber” in the following",
     contractCustomerNote: "",
-    contractVehiclesIntro: "The Subscriber receives the following vehicles from CARIFY:",
+    contractVehiclesIntro: "CARIFY provides the Subscriber with these vehicles:",
     contractFieldModel: "Vehicle / type",
     contractFieldStart: "Desired subscription start",
     contractFieldKm: "Kilometre package per month",
@@ -426,9 +425,9 @@ globalThis.CarifyDefaults = (function () {
       "If, for any reason, a vehicle becomes unavailable, CARIFY provides an appropriate alternative solution.",
     contractRateTitle: "Subscription fee",
     contractRateText:
-      "For the vehicles and the service, CARIFY charges a vehicle-related monthly fee. {{aborate_satz}}{{aufpreis_satz}}\n" +
-      "The fee is invoiced monthly to the Subscriber and is due on the 1st day of the subscription month.\n" +
-      "{{mehrkm_satz}} After the minimum term, the notice period is {{kuendigungsfrist}} to the end of the respective subscription month.\n" +
+      "Vehicle and service are covered by one monthly fee per vehicle. {{aborate_satz}}{{aufpreis_satz}}\n" +
+      "CARIFY invoices the fee every month; it is payable on the first day of each subscription month.\n" +
+      "{{mehrkm_satz}} After the minimum term, the subscription can be cancelled with {{kuendigungsfrist}} notice to the end of a subscription month.\n" +
       "CARIFY’s general terms and conditions apply.",
     contractRateOne: "This amounts to **{{betrag}} per month** ({{mwst}}).",
     contractRateEach: "This amounts to **{{betrag}} per vehicle and month** ({{mwst}}).",
@@ -437,8 +436,8 @@ globalThis.CarifyDefaults = (function () {
     contractSurchargeText: "Plus, per vehicle and month ({{mwst}}), {{liste}}.",
     contractSurchargeInsurance: "**{{betrag}}** for the insurance upgrade",
     contractSurchargePackage: "**{{betrag}}** for the {{paket}} package",
-    contractExtraKmOne: "Additional kilometres are charged at **{{betrag}} per km** ({{mwst}}) when the vehicle is returned.",
-    contractExtraKmGroups: "Additional kilometres are charged per km ({{mwst}}) when the vehicle is returned: {{liste}}.",
+    contractExtraKmOne: "Each extra kilometre costs **{{betrag}}** ({{mwst}}) and is settled when the vehicle is returned.",
+    contractExtraKmGroups: "Extra kilometres are settled per km when the vehicle is returned ({{mwst}}): {{liste}}.",
     contractVatExcl: "excl. VAT",
     contractVatIncl: "incl. VAT",
     listAnd: " and ",
@@ -451,8 +450,7 @@ globalThis.CarifyDefaults = (function () {
     contractSignName: "Name, first name",
     contractSignSignature: "Legally valid signature",
     contractSignSignatureNote: "(authorised to sign according to the commercial register)",
-    contractFootnote:
-      "If necessary, CARIFY may request additional documents as part of the creditworthiness assessment.",
+    contractFootnote: "CARIFY may ask for further documents to check creditworthiness.",
     emailSubjectOffer: "Your CARIFY offer",
     emailSubjectFollowUp: "Your CARIFY offer of {{datum}}",
     emailFollowUp:

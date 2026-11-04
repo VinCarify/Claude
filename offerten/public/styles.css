@@ -541,6 +541,15 @@ textarea {
   #drafts-button .count {
     display: none;
   }
+
+  /* The "Neu" button sits near the left edge on phones: open the menu across the screen. */
+  .menu-list {
+    position: fixed;
+    top: calc(var(--header-h) - 4px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
 }
 
 /* ------------------------------------------------------------------ editor */
@@ -919,6 +928,17 @@ select.input {
 
 .add-row {
   justify-self: start;
+}
+
+.inline-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-row .input {
+  flex: 1;
+  min-width: 0;
 }
 
 .empty {

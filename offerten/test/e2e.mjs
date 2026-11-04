@@ -200,19 +200,23 @@ async function desktopFlow(browser, url) {
 
   // Vehicle from the catalog replaces the empty starter vehicle
   await page.getByLabel("Fahrzeugkatalog").selectOption("cat-1");
+  await page.locator("[data-key=catalog-add]").click();
   await settle(page);
   assert.equal(await page.locator(".card .card-title", { hasText: "TESTMARKE Kombi Sportline" }).count(), 1);
 
-  // Second vehicle, prices pasted from a spreadsheet (2 rows × 2 columns)
+  // Second vehicle, prices pasted from a spreadsheet (2 rows × 2 columns, first cell empty)
   await page.getByRole("button", { name: "＋ Fahrzeug hinzufügen" }).click();
   const card = page.locator("#sec-vehicles .card").nth(1);
   await card.getByLabel("Modell").fill("TESTMARKE Kompakt Style");
   await card.locator(".price-grid tbody input").first().evaluate((input) => {
     const data = new DataTransfer();
-    data.setData("text/plain", "520\t590\n480\t550\n");
+    data.setData("text/plain", "\t590\r\n480\t550\r\n");
     input.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
   });
   await settle(page);
+  const pasted = await page.locator("#sec-vehicles .card").nth(1).locator(".price-grid tbody tr").evaluateAll((rows) =>
+    rows.map((tr) => [...tr.querySelectorAll("td:not(.col-ins) input")].map((i) => i.value)));
+  assert.deepEqual(pasted, [["", "590"], ["480", "550"]], "paste keeps an empty first cell in place");
 
   let text = await previewText(page);
   for (const expected of [
@@ -282,6 +286,7 @@ async function desktopFlow(browser, url) {
   await page.click("#contract-create");
   await settle(page);
   assert.equal(await page.locator(".type-chip").textContent(), "Vertrag");
+  assert.equal(await page.locator("#drafts-count").textContent(), "2", "drafts counter follows new documents");
   await page.getByLabel("Vertragsnummer").fill("0123456");
   await page.getByLabel("Geplanter Abobeginn").fill("2026-11-01");
   await page.getByLabel("Strasse, Nr.").fill("Musterweg 5");
@@ -318,7 +323,7 @@ async function desktopFlow(browser, url) {
   await page.getByRole("radio", { name: "Übernahme" }).check();
   await settle(page);
   text = await previewText(page);
-  assert.ok(text.includes("Vertragsanpassung") && text.includes("Der Abo-Nehmer übernimmt folgende Fahrzeuge:"), "takeover wording");
+  assert.ok(text.includes("Vertragsanpassung") && text.includes("Der Abo-Nehmer übernimmt diese bestehenden Abos:"), "takeover wording");
   assert.ok(text.includes("Änderungsdatum"), "takeover date label");
 
   // Drafts persist across reloads
@@ -351,6 +356,10 @@ async function mobileFlow(browser, url) {
   await page.goto(url);
   await page.waitForSelector("body[data-ready]");
   await assertNoHorizontalScroll(page, "mobile editor");
+  await page.click("#new-button");
+  const menu = await page.locator("#new-menu-list").boundingBox();
+  assert.ok(menu.x >= 0 && menu.x + menu.width <= 390, `"Neu" menu inside the screen (x=${menu.x}, w=${menu.width})`);
+  await page.click("#new-button");
   await page.getByLabel("Firma", { exact: true }).fill("Mobil AG");
   await settle(page);
   // The preview is paginated even while its tab is hidden

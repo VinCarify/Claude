@@ -183,10 +183,10 @@ test("contractView: one vehicle, several of one model, model groups", () => {
   const s = settingsWithTeam();
   const doc = M.newDocument("contract", s, "2026-10-24");
   Object.assign(doc.contract, { number: "0123456", start: "2026-11-01", km: 2500, months: 3, insurance: "OPTIMUM", packageType: "Flex" });
-  Object.assign(doc.contract.items[0], { model: "Modell A", rate: 1140 });
+  Object.assign(doc.contract.items[0], { model: "Modell A", rate: 1230 });
   let view = M.contractView(doc, s);
   let text = JSON.stringify(plain(view.rateBlocks));
-  assert.ok(text.includes(`CHF${NB}1’140 pro Monat`), text);
+  assert.ok(text.includes(`CHF${NB}1’230 pro Monat`), text);
   assert.ok(text.includes(`CHF${NB}0.50 pro km`));
   assert.ok(!text.includes("je Fahrzeug"));
   assert.equal(view.grid[0].lines[0], "Modell A");
@@ -277,12 +277,12 @@ test("contract kinds: adjustment and takeover", () => {
   Object.assign(doc.contract.items[0], { model: "Modell A", rate: 800 });
   let view = M.contractView(doc, s);
   assert.equal(view.subtitle, "Vertrag Nr. 0123456");
-  assert.equal(view.intro, "Der Abo-Nehmer übernimmt folgende Fahrzeuge von CARIFY:");
+  assert.equal(view.intro, "CARIFY stellt dem Abo-Nehmer diese Fahrzeuge zur Verfügung:");
 
   doc.contract.kind = "adjustment";
   view = M.contractView(doc, s);
   assert.equal(view.subtitle, "Vertrag Nr. 0123456 – Anpassung");
-  assert.equal(view.intro, "Bezüglich folgender Fahrzeuge von CARIFY:");
+  assert.equal(view.intro, "Die Anpassung betrifft diese Fahrzeuge:");
   assert.equal(view.grid[1].label, "Mindestlaufzeit bis");
   assert.equal(view.grid[3].lines[0], "12 + Verlängerung");
   assert.equal(M.fileName(Object.assign(doc, { customer: { ...doc.customer, company: "Beispiel GmbH" } }), s), "CARIFY Vertrag - Beispiel GmbH - Anpassung");
@@ -293,7 +293,7 @@ test("contract kinds: adjustment and takeover", () => {
   doc.contract.downPayment = 5000;
   view = M.contractView(doc, s);
   assert.equal(view.subtitle, "Vertragsanpassung");
-  assert.equal(view.intro, "Der Abo-Nehmer übernimmt folgende Fahrzeuge:");
+  assert.equal(view.intro, "Der Abo-Nehmer übernimmt diese bestehenden Abos:");
   assert.equal(view.grid[1].label, "Änderungsdatum");
   assert.equal(view.grid[2].label, "Fahrzeug-ID");
   assert.equal(view.grid[2].lines[0], "12345, 67890");

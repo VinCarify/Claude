@@ -85,24 +85,31 @@
   }
 
   function saveSettings() {
-    store.set(KEYS.settings, state.settings);
+    return store.set(KEYS.settings, state.settings);
   }
 
   function saveDocs() {
-    if (store.set(KEYS.docs, state.docs)) {
-      setSaveState("Gespeichert");
-    }
+    const ok = store.set(KEYS.docs, state.docs);
+    if (ok) setSaveState("Gespeichert");
     store.set(KEYS.current, state.doc?.id || "");
+    $("#drafts-count").textContent = String(state.docs.length);
+    return ok;
   }
 
   let saveTimer = 0;
   function scheduleSave() {
     setSaveState("Speichert …");
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      if (state.doc) state.doc.updatedAt = new Date().toISOString();
-      saveDocs();
-    }, 350);
+    saveTimer = setTimeout(flushSave, 350);
+  }
+
+  // Also runs when the tab is hidden or closed, so the last keystrokes are never lost.
+  function flushSave() {
+    if (!saveTimer) return;
+    clearTimeout(saveTimer);
+    saveTimer = 0;
+    if (state.doc) state.doc.updatedAt = new Date().toISOString();
+    saveDocs();
   }
 
   function setSaveState(text) {
@@ -133,6 +140,20 @@
   function defaultOwner() {
     const team = state.settings.team;
     return team.find((m) => m.id === state.me)?.id || team[0]?.id || "";
+  }
+
+  // Documents without a (still existing) CARIFY contact get the default one.
+  function assignMissingOwners() {
+    const owner = defaultOwner();
+    if (!owner) return;
+    let changed = false;
+    for (const d of state.docs) {
+      if (!state.settings.team.some((m) => m.id === d.ownerId)) {
+        d.ownerId = owner;
+        changed = true;
+      }
+    }
+    if (changed) saveDocs();
   }
 
   function addDoc(doc) {
@@ -187,8 +208,13 @@
   }
 
   function updateSettings(mutate, opts) {
+    const before = JSON.stringify(state.settings);
     mutate(state.settings);
-    saveSettings();
+    if (!saveSettings()) {
+      // Browser storage full (usually big images): keep what is stored, the toast says why.
+      state.settings = JSON.parse(before);
+      opts = { ...opts, settings: true };
+    }
     schedulePreview();
     if (opts?.editor) renderEditor();
     if (opts?.settings) renderSettings();
@@ -264,7 +290,7 @@
     const wrap = h("div", { class: "field", dataset: { field: opts?.field || "" } },
       h("label", { class: "field-label", for: id, text: label }),
       control,
-      opts?.hint ? h("span", { class: "field-hint", text: opts.hint }) : null);
+      opts?.hint ? h("span", { class: "field-hint", id: opts.hintId || null, text: opts.hint }) : null);
     return wrap;
   }
 
@@ -367,10 +393,25 @@
     return btn;
   }
 
-  function button(label, onClick, cls) {
-    const btn = h("button", { type: "button", class: `btn ${cls || ""}`, text: label });
+  function button(label, onClick, cls, key) {
+    const btn = h("button", { type: "button", class: `btn ${cls || ""}`, text: label, dataset: key ? { key } : null });
     btn.addEventListener("click", onClick);
     return btn;
+  }
+
+  // Rebuilding a form drops the focus: remember a stable selector for the focused element and
+  // restore it afterwards (ids and radio names are deterministic, see fieldCounter).
+  function focusKey(root) {
+    const el = document.activeElement;
+    if (!el || el === document.body || !root.contains(el)) return null;
+    if (el.dataset.key) return `[data-key="${CSS.escape(el.dataset.key)}"]`;
+    if (el.type === "radio" && el.name) return `input[name="${CSS.escape(el.name)}"][value="${CSS.escape(el.value)}"]`;
+    if (el.id) return `#${CSS.escape(el.id)}`;
+    return null;
+  }
+
+  function restoreFocus(root, key) {
+    if (key) root.querySelector(key)?.focus({ preventScroll: true });
   }
 
   function move(list, index, delta) {
@@ -389,6 +430,7 @@
     const editor = $("#editor");
     const scroll = editor.scrollTop;
     const openState = new Map([...editor.querySelectorAll("details.section[id]")].map((d) => [d.id, d.open]));
+    const focus = focusKey(editor);
     fieldCounter = 0;
     const head = h("div", { class: "editor-head" },
       h("div", {},
@@ -405,6 +447,7 @@
       if (el) el.open = open;
     }
     editor.scrollTop = scroll;
+    restoreFocus(editor, focus);
     refreshChecklist();
   }
 
@@ -414,6 +457,8 @@
     const box = $("#checklist");
     if (!box) return;
     $("#editor-title").textContent = state.doc.customer.company.trim() || "Neuer Kunde";
+    const validity = $("#validity-hint");
+    if (validity && state.doc.offer) validity.textContent = `bis ${F.date(F.addDays(state.doc.date, Number(state.doc.offer.validityDays) || 0))}`;
     for (const el of document.querySelectorAll(".field.is-missing")) el.classList.remove("is-missing");
     if (!issues.length) {
       box.replaceChildren(h("div", { class: "checklist is-done", text: "Alles erfasst – bereit für das PDF." }));
@@ -447,10 +492,13 @@
     setTimeout(() => $("#editor input")?.focus(), 50);
   }
 
-  function teamOptions() {
+  // With a placeholder whenever the document has no valid contact, so the select never shows
+  // someone who is not stored (and picking the first person still fires "change").
+  function teamOptions(doc) {
     const team = state.settings.team;
     if (!team.length) return [["", "– noch kein Team erfasst –"]];
-    return team.map((m) => [m.id, m.role ? `${m.name} · ${m.role}` : m.name]);
+    const options = team.map((m) => [m.id, m.role ? `${m.name} · ${m.role}` : m.name]);
+    return team.some((m) => m.id === doc.ownerId) ? options : [["", "– bitte wählen –"], ...options];
   }
 
   function customerFields(doc, opts) {
@@ -492,8 +540,8 @@
       section("Offerte", [
         h("div", { class: "row" },
           dateField("Datum", doc.date, (v) => update((d) => (d.date = v)), { field: "date" }),
-          number("Gültig (Tage)", o.validityDays, (v) => update((d) => (d.offer.validityDays = v ?? 0)), { hint: o.validityDays ? `bis ${F.date(F.addDays(doc.date, Number(o.validityDays) || 0))}` : "" })),
-        select("Ansprechpartner/in", teamOptions(), doc.ownerId, (v) => update((d) => (d.ownerId = v)), { field: "ownerId" }),
+          number("Gültig (Tage)", o.validityDays, (v) => update((d) => (d.offer.validityDays = v ?? 0)), { hint: " ", hintId: "validity-hint" })),
+        select("Ansprechpartner/in", teamOptions(doc), doc.ownerId, (v) => update((d) => (d.ownerId = v)), { field: "ownerId" }),
         segmented("Sprache", LANG_OPTIONS, doc.lang, (v) => update((d) => (d.lang = v), { structural: true })),
         segmented("Preise anzeigen", [["excl", "exkl. MwSt"], ["incl", "inkl. MwSt"], ["both", "beides"]], o.vatMode, (v) => update((d) => (d.offer.vatMode = v)), { hint: "Preise immer exkl. MwSt erfassen – inkl. rechnet die App." }),
         segmented("Versicherungs-Aufpreis", [["none", "nicht zeigen"], ["column", "als Spalte"], ["note", "beim Fahrzeug"]], o.insuranceDisplay, (v) => update((d) => (d.offer.insuranceDisplay = v))),
@@ -521,12 +569,16 @@
     const children = [];
     const catalog = state.settings.catalog;
     if (catalog.length) {
-      const sel = h("select", { class: "input" },
-        h("option", { value: "", text: `Aus Katalog hinzufügen (${catalog.length}) …` }),
+      // Choosing only selects; the button adds. Arrow keys on a closed select fire "change".
+      const sel = h("select", { class: "input", id: "catalog-select" },
+        h("option", { value: "", text: `Fahrzeug wählen (${catalog.length}) …` }),
         catalog.map((v) => h("option", { value: v.id, text: [v.model, v.year, v.stand ? `Stand ${v.stand}` : ""].filter(Boolean).join(" · ") })));
-      sel.addEventListener("change", () => {
+      const add = button("Hinzufügen", () => {
         const item = catalog.find((v) => v.id === sel.value);
-        if (!item) return;
+        if (!item) {
+          toast("Zuerst ein Fahrzeug im Katalog wählen.");
+          return;
+        }
         const copy = M.normalizeVehicle(M.clone(item));
         copy.id = M.uid("veh");
         update((d) => {
@@ -536,8 +588,10 @@
           else d.offer.vehicles.push(copy);
         }, { structural: true });
         toast(`${item.model || "Fahrzeug"} übernommen – Preise kurz prüfen.`);
-      });
-      children.push(field("Fahrzeugkatalog", sel));
+      }, "btn-sm", "catalog-add");
+      children.push(h("div", { class: "field" },
+        h("label", { class: "field-label", for: "catalog-select", text: "Fahrzeugkatalog" }),
+        h("div", { class: "inline-row" }, sel, add)));
     }
     o.vehicles.forEach((v, i) => children.push(vehicleCard(v, i, o.vehicles.length, (fn, opts) => update((d) => fn(d.offer.vehicles[i], d), opts), {
       remove: () => update((d) => d.offer.vehicles.splice(i, 1), { structural: true }),
@@ -551,7 +605,8 @@
       toCatalog: () => saveToCatalog(v),
     }, `vehicles.${i}`)));
     if (!o.vehicles.length) children.push(h("p", { class: "empty", text: "Noch kein Fahrzeug – füge eines hinzu." }));
-    children.push(button("＋ Fahrzeug hinzufügen", () => update((d) => d.offer.vehicles.push(M.newVehicle(state.settings, d.offer.vehicles.at(-1)?.kms, d.offer.vehicles.at(-1)?.rows.map((r) => r.months))), { structural: true }), "add-row btn-sm"));
+    children.push(h("div", { class: "field", dataset: { field: "vehicles" } },
+      button("＋ Fahrzeug hinzufügen", () => update((d) => d.offer.vehicles.push(M.newVehicle(state.settings, d.offer.vehicles.at(-1)?.kms, d.offer.vehicles.at(-1)?.rows.map((r) => r.months))), { structural: true }), "add-row btn-sm", "vehicle-add")));
     return children;
   }
 
@@ -615,8 +670,8 @@
       return input;
     };
 
-    const chip = (label, pressed, onClick) => {
-      const btn = h("button", { type: "button", class: "chip", "aria-pressed": pressed ? "true" : "false", text: label });
+    const chip = (label, pressed, onClick, key) => {
+      const btn = h("button", { type: "button", class: "chip", "aria-pressed": pressed ? "true" : "false", text: label, dataset: { key: `${fieldPrefix}.${key}` } });
       btn.addEventListener("click", onClick);
       return btn;
     };
@@ -641,10 +696,10 @@
       text("Link zum Fahrzeug (optional)", v.link, (val) => change((veh) => (veh.link = val)), { field: `${fieldPrefix}.link`, attrs: { type: "url", placeholder: "https://…" }, hint: "Im PDF klickbar." }),
       h("div", { class: "field" },
         h("span", { class: "field-label", text: "KM-Pakete pro Monat" }),
-        h("div", { class: "chips" }, kmOptions.map((km) => chip(F.number(km), v.kms.includes(km), () => toggleKm(km))), addCustom("+ km", (km) => !v.kms.includes(km) && toggleKm(km)))),
+        h("div", { class: "chips" }, kmOptions.map((km) => chip(F.number(km), v.kms.includes(km), () => toggleKm(km), `km.${km}`)), addCustom("+ km", (km) => !v.kms.includes(km) && toggleKm(km)))),
       h("div", { class: "field" },
         h("span", { class: "field-label", text: "Mindestlaufzeiten (Monate)" }),
-        h("div", { class: "chips" }, termOptions.map((m) => chip(String(m), v.rows.some((r) => r.months === m), () => toggleTerm(m))), addCustom("+ Mte", (m) => !v.rows.some((r) => r.months === m) && toggleTerm(m)))),
+        h("div", { class: "chips" }, termOptions.map((m) => chip(String(m), v.rows.some((r) => r.months === m), () => toggleTerm(m), `term.${m}`)), addCustom("+ Mte", (m) => !v.rows.some((r) => r.months === m) && toggleTerm(m)))),
       priceGrid(v, change, fieldPrefix));
   }
 
@@ -671,10 +726,11 @@
     // Paste a block from Excel / Google Sheets: tabs = columns, new lines = rows.
     for (const { input, r, c } of inputs) {
       input.addEventListener("paste", (e) => {
-        const raw = e.clipboardData?.getData("text") || "";
-        if (!/[\t\n]/.test(raw.trim())) return;
+        // Only line breaks are trimmed: an empty first or last cell is a real (unpriced) cell.
+        const raw = (e.clipboardData?.getData("text") || "").replace(/\r\n?/g, "\n").replace(/\n+$/, "");
+        if (!/[\t\n]/.test(raw)) return;
         e.preventDefault();
-        const grid = raw.replace(/\r/g, "").trim().split("\n").map((line) => line.split("\t"));
+        const grid = raw.split("\n").map((line) => line.split("\t"));
         change((veh) => {
           grid.forEach((cells, dr) => cells.forEach((cell, dc) => {
             const row = veh.rows[r + dr];
@@ -707,7 +763,7 @@
           dateField("Datum", doc.date, (v) => update((x) => (x.date = v)), { field: "date", hint: "Steht bei der CARIFY-Unterschrift." })),
         segmented("Sprache", LANG_OPTIONS, doc.lang, (v) => update((x) => (x.lang = v), { structural: true })),
         h("div", { class: "row" },
-          select("Ansprechpartner/in", teamOptions(), doc.ownerId, (v) => update((x) => (x.ownerId = v)), { hint: "Für den E-Mail-Text." }),
+          select("Ansprechpartner/in", teamOptions(doc), doc.ownerId, (v) => update((x) => (x.ownerId = v)), { hint: "Für den E-Mail-Text." }),
           text("Unterzeichnet für CARIFY (optional)", c.signatory, (v) => update((x) => (x.contract.signatory = v)))),
       ], { id: "sec-contract" }),
       section("Abo-Nehmer", customerFields(doc, { contactFirst: false }), { id: "sec-customer" }),
@@ -722,7 +778,7 @@
           withList(text("Insurance-Package", c.insurance, (v) => update((x) => (x.contract.insurance = v))), d.insurancePackages),
           number("Versicherungs-Upgrade (CHF/Monat)", c.insuranceSurcharge, (v) => update((x) => (x.contract.insuranceSurcharge = v)), { hint: "Nur wenn separat verrechnet." })),
         h("div", { class: "row" },
-          withList(text("Package Type", c.packageType, (v) => update((x) => (x.contract.packageType = v))), d.packageTypes),
+          withList(text("Package Type", c.packageType, (v) => update((x) => (x.contract.packageType = v)), { field: "contract.packageType" }), d.packageTypes),
           number("Package-Aufpreis (CHF/Monat)", c.packageSurcharge, (v) => update((x) => (x.contract.packageSurcharge = v)))),
         segmented("Preise", [["excl", "exkl. MwSt"], ["incl", "inkl. MwSt"]], c.vatMode, (v) => update((x) => (x.contract.vatMode = v))),
         h("div", { class: "row" },
@@ -923,10 +979,11 @@
     const merged = M.mergeSettings(data);
     const hadData = state.settings.company.street || state.settings.team.length;
     if (hadData && !confirm("Bestehende Einstellungen in diesem Browser ersetzen?")) return;
+    // Store first: if the browser storage is full the old settings stay (the toast says why).
+    if (!store.set(KEYS.settings, merged)) return;
     state.settings = merged;
-    saveSettings();
     if (!state.settings.team.some((m) => m.id === state.me)) state.me = "";
-    if (state.doc && !state.doc.ownerId) state.doc.ownerId = defaultOwner();
+    assignMissingOwners();
     renderEditor();
     schedulePreview(0);
     updateBanner();
@@ -941,11 +998,13 @@
 
   function exportDrafts() {
     download(`carify-entwuerfe-${today()}.json`, { schema: "carify-offerten-entwuerfe/1", docs: state.docs });
+    toast("Backup exportiert – enthält Kundendaten, nur intern ablegen, nicht ins Repo.");
   }
 
   function importDrafts(data) {
     if (data?.schema !== "carify-offerten-entwuerfe/1" || !Array.isArray(data.docs)) throw new Error("Das ist kein Entwürfe-Backup.");
     let added = 0;
+    const before = state.docs.length;
     for (const raw of data.docs) {
       try {
         const doc = M.normalizeDocument(raw, state.settings);
@@ -956,7 +1015,10 @@
         /* skip */
       }
     }
-    saveDocs();
+    if (!saveDocs()) {
+      state.docs.splice(before);
+      return;
+    }
     renderDrafts();
     toast(`${added} Entwürfe importiert`);
   }
@@ -984,9 +1046,11 @@
   }
 
   function renderSettings() {
+    const dialog = $("#settings-dialog");
+    const focus = focusKey(dialog);
     const nav = $("#settings-tabs");
     nav.replaceChildren(...SETTINGS_TABS.map(([id, label]) => {
-      const btn = h("button", { type: "button", role: "tab", "aria-selected": id === settingsTab ? "true" : "false", text: label });
+      const btn = h("button", { type: "button", role: "tab", "aria-selected": id === settingsTab ? "true" : "false", text: label, dataset: { key: `settings-tab-${id}` } });
       btn.addEventListener("click", () => {
         settingsTab = id;
         renderSettings();
@@ -995,10 +1059,17 @@
     }));
     const body = $("#settings-body");
     const scroll = body.scrollTop;
+    const openState = new Map([...body.querySelectorAll("details.section[id]")].map((d) => [d.id, d.open]));
     fieldCounter = 1000;
     const builders = { company: settingsCompany, team: settingsTeam, defaults: settingsDefaults, texts: settingsTexts, design: settingsDesign, catalog: settingsCatalog, data: settingsData };
     body.replaceChildren(...builders[settingsTab]());
+    // Keep the sections that were open (the structure of a tab is stable, so the index is an id).
+    body.querySelectorAll("details.section").forEach((d, i) => {
+      d.id ||= `set-${settingsTab}-${textsLang}-${i}`;
+      if (openState.has(d.id)) d.open = openState.get(d.id);
+    });
     body.scrollTop = scroll;
+    restoreFocus(dialog, focus);
   }
 
   const set = (mutate, opts) => updateSettings(mutate, opts);
@@ -1037,7 +1108,11 @@
     return [
       h("p", { class: "lead", text: "Wer Offerten verschickt. Name, Funktion und Kontakt stehen im Begleitbrief. «Das bin ich» gilt nur in diesem Browser." }),
       ...cards,
-      button("＋ Person hinzufügen", () => set((s) => s.team.push({ id: M.uid("team"), name: "", role: "", phone: "", email: "" }), { settings: true, editor: true }), "add-row btn-sm"),
+      button("＋ Person hinzufügen", () => {
+        set((s) => s.team.push({ id: M.uid("team"), name: "", role: "", phone: "", email: "" }), { settings: true });
+        assignMissingOwners();
+        renderEditor();
+      }, "add-row btn-sm", "team-add"),
     ];
   }
 
@@ -1176,7 +1251,13 @@
           const canvas = document.createElement("canvas");
           canvas.width = Math.round(img.naturalWidth * scale);
           canvas.height = Math.round(img.naturalHeight * scale);
-          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          const g = canvas.getContext("2d");
+          if (!keepAlpha) {
+            // the pages are white, so a white background looks the same and JPEG stays small
+            g.fillStyle = "#ffffff";
+            g.fillRect(0, 0, canvas.width, canvas.height);
+          }
+          g.drawImage(img, 0, 0, canvas.width, canvas.height);
           resolve(keepAlpha ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.86));
         };
         img.onerror = () => reject(new Error("Bild konnte nicht geladen werden."));
@@ -1212,8 +1293,8 @@
     return [
       h("p", { class: "lead", text: "Farben und Schrift sind fix im CARIFY-Design. Hier kommen Logo, Bilder und Vertrauenselemente dazu." }),
       imageField("Logo", "Schwarzes CARIFY-Logo, transparent (PNG oder SVG). Ohne Logo wird der Schriftzug gesetzt.", b.logo, (v) => set((s) => (s.branding.logo = v), { settings: true }), { maxWidth: 1200, alpha: true }),
-      imageField("Bild Deckblatt", "z. B. die App-Screens aus Canva als PNG. Ohne Bild: orange Grafik.", b.coverImage, (v) => set((s) => (s.branding.coverImage = v), { settings: true }), { maxWidth: 1600, alpha: true }),
-      imageField("Bild «Warum Auto-Abo»", "z. B. Auto mit Inklusivleistungen. Ohne Bild: Icons.", b.whyImage, (v) => set((s) => (s.branding.whyImage = v), { settings: true }), { maxWidth: 1400, alpha: true }),
+      imageField("Bild Deckblatt", "z. B. die App-Screens aus Canva als PNG. Ohne Bild: orange Grafik.", b.coverImage, (v) => set((s) => (s.branding.coverImage = v), { settings: true }), { maxWidth: 1600, alpha: false }),
+      imageField("Bild «Warum Auto-Abo»", "z. B. Auto mit Inklusivleistungen. Ohne Bild: Icons.", b.whyImage, (v) => set((s) => (s.branding.whyImage = v), { settings: true }), { maxWidth: 1400, alpha: false }),
       text("Referenzen im Fussband (mit Komma)", b.references.join(", "), (v) => set((s) => (s.branding.references = listToStrings(v))), { hint: "Nur wenn keine Referenz-Logos hochgeladen sind." }),
       h("div", { class: "field" },
         h("span", { class: "field-label", text: "Referenz-Logos (weiss, transparent)" }),
@@ -1337,6 +1418,10 @@
     $("#tab-edit").addEventListener("click", () => setView("edit"));
     $("#tab-preview").addEventListener("click", () => setView("preview"));
 
+    window.addEventListener("pagehide", flushSave);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flushSave();
+    });
     window.addEventListener("beforeprint", beforePrint);
     window.addEventListener("afterprint", afterPrint);
     let resizeTimer = 0;
@@ -1350,10 +1435,14 @@
         state.settings = loadSettings();
         renderEditor();
         schedulePreview(0);
+        updateBanner();
+        if ($("#settings-dialog").open) renderSettings();
       } else if (e.key === KEYS.docs) {
         const current = state.doc?.id;
         state.docs = loadDocs(state.settings);
         state.doc = state.docs.find((d) => d.id === current) || state.docs[0] || null;
+        $("#drafts-count").textContent = String(state.docs.length);
+        if ($("#drafts-dialog").open) renderDrafts();
         if (state.doc) {
           renderEditor();
           schedulePreview(0);

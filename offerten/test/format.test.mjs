@@ -6,14 +6,14 @@ const F = loadLib("format.js").CarifyFormat;
 const NB = "\u00a0";
 
 test("parseNumber accepts Swiss formats and rejects junk", () => {
-  assert.equal(F.parseNumber("1’140"), 1140);
-  assert.equal(F.parseNumber("1'140"), 1140);
-  assert.equal(F.parseNumber("1 140"), 1140);
-  assert.equal(F.parseNumber("CHF 691"), 691);
-  assert.equal(F.parseNumber("691 CHF"), 691);
-  assert.equal(F.parseNumber("0,53"), 0.53);
-  assert.equal(F.parseNumber("0.53"), 0.53);
-  assert.equal(F.parseNumber("1,140"), 1140);
+  assert.equal(F.parseNumber("1’230"), 1230);
+  assert.equal(F.parseNumber("1'230"), 1230);
+  assert.equal(F.parseNumber("1 230"), 1230);
+  assert.equal(F.parseNumber("CHF 612"), 612);
+  assert.equal(F.parseNumber("612 CHF"), 612);
+  assert.equal(F.parseNumber("0,47"), 0.47);
+  assert.equal(F.parseNumber("0.47"), 0.47);
+  assert.equal(F.parseNumber("1,230"), 1230);
   assert.equal(F.parseNumber("12,345,678"), 12345678);
   assert.equal(F.parseNumber("30.-"), 30);
   assert.equal(F.parseNumber(42), 42);
@@ -25,16 +25,16 @@ test("parseNumber accepts Swiss formats and rejects junk", () => {
 });
 
 test("CHF formatting uses Swiss grouping and non-breaking spaces", () => {
-  assert.equal(F.chf(1140), `CHF${NB}1’140`);
-  assert.equal(F.chfAfter(1063), `1’063${NB}CHF`);
-  assert.equal(F.chf2(0.53), `CHF${NB}0.53`);
+  assert.equal(F.chf(1230), `CHF${NB}1’230`);
+  assert.equal(F.chfAfter(1048), `1’048${NB}CHF`);
+  assert.equal(F.chf2(0.47), `CHF${NB}0.47`);
   assert.equal(F.chf(-0), `CHF${NB}0`);
   assert.equal(F.chf(null), "");
   assert.equal(F.chf(99.5), `CHF${NB}99.50`);
 });
 
 test("French formatting groups with a non-breaking space", () => {
-  assert.match(F.chf(1140, "fr"), /^CHF\u00a01\u00a0140$/);
+  assert.match(F.chf(1230, "fr"), /^CHF\u00a01\u00a0230$/);
 });
 
 test("decimal trims trailing zeros", () => {

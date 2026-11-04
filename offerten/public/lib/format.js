@@ -13,7 +13,7 @@ globalThis.CarifyFormat = (function () {
 
   const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 
-  // "1'140", "0.53", "30.-" -> number; "", "–", "abc" -> null. Accepts ’ ' and spaces as group
+  // "1'230", "0.47", "30.-" -> number; "", "–", "abc" -> null. Accepts ’ ' and spaces as group
   // separators and a comma as decimal separator, because people paste prices from everywhere.
   function parseNumber(value) {
     if (isNum(value)) return value;
@@ -24,7 +24,7 @@ globalThis.CarifyFormat = (function () {
       .replace(/\s*CHF$/i, "")
       .replace(/\.[-–]$/, "")
       .replace(/[\s\u00a0\u202f\u2019'`]/g, "");
-    // "1,140" from an English spreadsheet is grouping, "0,53" is a decimal comma.
+    // "1,230" from an English spreadsheet is grouping, "0,47" is a decimal comma.
     cleaned = /^-?\d{1,3}(,\d{3})+$/.test(cleaned) ? cleaned.replace(/,/g, "") : cleaned.replace(",", ".");
     if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return null;
     return Number(cleaned);
@@ -44,17 +44,17 @@ globalThis.CarifyFormat = (function () {
     return new Intl.NumberFormat(locale(lang), { maximumFractionDigits: 2 }).format(n).replace(/\u202f/g, NBSP);
   }
 
-  // "CHF 1’140" (contract style) – decimals only when there are cents.
+  // "CHF 1’230" (contract style) – decimals only when there are cents.
   function chf(n, lang) {
     return isNum(n) ? `CHF${NBSP}${number(n, lang)}` : "";
   }
 
-  // "1’140 CHF" (offer price table style).
+  // "1’230 CHF" (offer price table style).
   function chfAfter(n, lang) {
     return isNum(n) ? `${number(n, lang)}${NBSP}CHF` : "";
   }
 
-  // "CHF 0.53" – always two decimals (per-km tariffs).
+  // "CHF 0.47" – always two decimals (per-km tariffs).
   function chf2(n, lang) {
     return isNum(n) ? `CHF${NBSP}${number(n, lang, 2)}` : "";
   }
