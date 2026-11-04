@@ -139,6 +139,7 @@ globalThis.CarifyDefaults = (function () {
     contractVatExcl: "exkl. MwSt",
     contractVatIncl: "inkl. MwSt",
     listAnd: " und ",
+    contractNoticeDays: "{{tage}} Tage",
     contractSignaturesTitle: "Unterschriften",
     contractSignCarify: "CARIFY",
     contractSignCarifyRole: "Firmenvertreter",
@@ -291,6 +292,7 @@ globalThis.CarifyDefaults = (function () {
     contractVatExcl: "hors TVA",
     contractVatIncl: "TVA incluse",
     listAnd: " et ",
+    contractNoticeDays: "{{tage}} jours",
     contractSignaturesTitle: "Signatures",
     contractSignCarify: "CARIFY",
     contractSignCarifyRole: "Représentant de l’entreprise",
@@ -440,6 +442,7 @@ globalThis.CarifyDefaults = (function () {
     contractVatExcl: "excl. VAT",
     contractVatIncl: "incl. VAT",
     listAnd: " and ",
+    contractNoticeDays: "{{tage}} days",
     contractSignaturesTitle: "Signatures",
     contractSignCarify: "CARIFY",
     contractSignCarifyRole: "Company representative",
@@ -493,7 +496,7 @@ globalThis.CarifyDefaults = (function () {
         vatMode: "excl",
         insuranceDisplay: "none",
         extraKmRate: null,
-        noticePeriod: "14 Tage",
+        noticePeriod: 14,
         insurancePackages: [],
         packageTypes: [],
       },
@@ -506,7 +509,8 @@ globalThis.CarifyDefaults = (function () {
         badges: [],
       },
       catalog: [],
-      texts: { de: TEXTS_DE, fr: TEXTS_FR, en: TEXTS_EN },
+      // fresh copies: settings get edited in place and must never change the built-in defaults
+      texts: JSON.parse(JSON.stringify({ de: TEXTS_DE, fr: TEXTS_FR, en: TEXTS_EN })),
     };
   }
 

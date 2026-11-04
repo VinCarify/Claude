@@ -513,7 +513,7 @@ img.doc-logo--cover {
 
 /* ------------------------------------------------------------------ letter */
 
-.doc-page--letter .doc-body {
+.doc-page--letter.is-first-page .doc-body {
   top: 190px;
 }
 
@@ -579,17 +579,17 @@ img.doc-logo--cover {
 }
 
 .why-top {
-  position: relative;
   margin-top: 18px;
-  height: 300px;
+  display: grid;
+  grid-template-columns: 1fr 250px;
+  gap: 18px;
+  align-items: start;
 }
 
 .why-chart {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 430px;
-  height: 300px;
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .chart-axis {
@@ -636,10 +636,6 @@ img.doc-logo--cover {
 }
 
 .why-callout {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 290px;
   padding: 18px 20px;
   border-radius: 4px;
   background: var(--d-orange-soft);
@@ -785,7 +781,7 @@ img.doc-logo--cover {
   font-size: 10.5px;
   font-weight: 700;
   line-height: 1.3;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .col-term {
@@ -997,6 +993,40 @@ td.col-insurance {
 
 .contract-h2 + .contract-text {
   margin-top: 6px;
+}
+
+.contract-text + .contract-text {
+  margin-top: 2px;
+}
+
+.contract-text-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.contract-models-label {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--d-grey);
+}
+
+.contract-models {
+  margin-top: 4px;
+  columns: 2;
+  column-gap: 40px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.contract-models span {
+  display: block;
+  break-inside: avoid;
+}
+
+.contract-models + .contract-grid {
+  margin-top: 12px;
 }
 
 .contract-signatures {

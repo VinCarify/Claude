@@ -58,6 +58,28 @@ test("mergeSettings ignores __proto__ and constructor keys", () => {
   assert.equal(typeof s.texts.de.constructor, "function");
 });
 
+test("imports never change the built-in default texts", () => {
+  M.mergeSettings({ schema: "carify-offerten/1", texts: { de: { footerClaim: "FIRMA" } } });
+  const s = M.mergeSettings(null);
+  s.texts.fr.coverButton = "EDITED";
+  assert.equal(D.settings().texts.de.footerClaim, "");
+  assert.notEqual(D.settings().texts.fr.coverButton, "EDITED");
+  assert.equal(M.mergeSettings({ schema: "carify-offerten/1" }).texts.de.footerClaim, "");
+});
+
+test("mergeSettings keeps the shape when a file has null or wrong types", () => {
+  const s = M.mergeSettings({ schema: "carify-offerten/1", company: null, defaults: { insurancePackages: null, terms: "3,6", vatRate: "8.1", extraKmRate: 0.6 } });
+  assert.equal(typeof s.company, "object");
+  assert.ok(Array.isArray(s.defaults.insurancePackages));
+  assert.ok(Array.isArray(s.defaults.terms));
+  assert.equal(s.defaults.vatRate, 8.1);
+  assert.equal(s.defaults.extraKmRate, 0.6);
+  const doc = M.normalizeDocument({ type: "contract", contact: null, contract: { number: 213044, noticePeriod: "14 Tage" } }, s);
+  assert.equal(doc.contract.number, "213044");
+  assert.equal(typeof doc.contact, "object");
+  assert.doesNotThrow(() => M.validate(doc, s));
+});
+
 test("mergeSettings lets a settings file override and extend texts", () => {
   const s = M.mergeSettings({ schema: "carify-offerten/1", texts: { de: { footerClaim: "Hallo", extraKey: "x" } } });
   assert.equal(M.texts(s, "de").footerClaim, "Hallo");
@@ -198,6 +220,56 @@ test("contractView: one vehicle, several of one model, model groups", () => {
   assert.ok(text.includes(`CHF${NB}0.60`));
 });
 
+test("VAT incl: surcharges are converted too, also when creating the contract", () => {
+  const s = settingsWithTeam();
+  const offer = offerFixture(s);
+  offer.offer.vatMode = "incl";
+  offer.offer.privateSurcharge = 30;
+  const view = M.offerView(offer, s);
+  const row12 = view.vehicles[0].rows.find((r) => r.months === 12);
+  assert.equal(row12.insurance, Math.round(30 * 1.081));
+  assert.ok(view.notes[0].includes(`CHF${NB}${Math.round(30 * 1.081)}`));
+  const pick = M.offerOptions(offer).find((o) => o.months === 12 && o.km === 1000);
+  const contract = M.contractFromOffer(offer, [pick.key], s);
+  assert.equal(contract.contract.vatMode, "incl");
+  assert.equal(contract.contract.items[0].rate, Math.round(690 * 1.081));
+  assert.equal(contract.contract.insuranceSurcharge, Math.round(30 * 1.081));
+  offer.offer.vatMode = "both";
+  assert.match(M.offerView(offer, s).vars.mwst_hinweis, /8\.1% MwSt/);
+});
+
+test("contract from offer flags different insurance surcharges", () => {
+  const s = settingsWithTeam();
+  const offer = offerFixture(s);
+  const options = M.offerOptions(offer);
+  const a = options.find((o) => o.months === 12 && o.km === 1000); // insurance 30
+  const b = options.find((o) => o.months === 3 && o.km === 1000); // no insurance, other term
+  assert.equal(M.contractFromOffer(offer, [a.key, b.key], s).contractMismatch, true);
+});
+
+test("notice period is written per language", () => {
+  const s = settingsWithTeam();
+  const doc = M.newDocument("contract", s, "2026-10-24");
+  Object.assign(doc.contract.items[0], { model: "A", rate: 500 });
+  const rate = (lang) => {
+    doc.lang = lang;
+    return JSON.stringify(plain(M.contractView(doc, s).rateBlocks));
+  };
+  assert.ok(rate("de").includes("14 Tage"));
+  assert.ok(rate("fr").includes("14 jours"));
+  assert.ok(rate("en").includes("14 days"));
+  doc.contract.noticePeriod = "2 Monate";
+  assert.ok(rate("de").includes("2 Monate"));
+});
+
+test("package surcharge needs a package type", () => {
+  const s = settingsWithTeam();
+  const doc = M.newDocument("contract", s, "2026-10-24");
+  doc.contract.packageSurcharge = 29;
+  doc.contract.packageType = "";
+  assert.ok(M.validate(doc, s).some((i) => i.field === "contract.packageType"));
+});
+
 test("contract kinds: adjustment and takeover", () => {
   const s = settingsWithTeam();
   const doc = M.newDocument("contract", s, "2026-10-24");
@@ -241,6 +313,9 @@ test("fileName follows the existing naming and is file-system safe", () => {
   assert.equal(M.fileName(contract, s), "CARIFY Vertrag - Beispiel GmbH");
   const empty = M.newDocument("offer", s, "2026-10-24");
   assert.equal(M.fileName(empty, s), "Offerte 24.10.2026");
+  const adj = M.newDocument("contract", s, "2026-10-24");
+  adj.contract.kind = "adjustment";
+  assert.equal(M.fileName(adj, s), "CARIFY Vertrag - Anpassung 24.10.2026");
 });
 
 test("emailText fills salutation, vehicle wording and validity", () => {

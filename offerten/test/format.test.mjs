@@ -13,6 +13,9 @@ test("parseNumber accepts Swiss formats and rejects junk", () => {
   assert.equal(F.parseNumber("691 CHF"), 691);
   assert.equal(F.parseNumber("0,53"), 0.53);
   assert.equal(F.parseNumber("0.53"), 0.53);
+  assert.equal(F.parseNumber("1,140"), 1140);
+  assert.equal(F.parseNumber("12,345,678"), 12345678);
+  assert.equal(F.parseNumber("30.-"), 30);
   assert.equal(F.parseNumber(42), 42);
   assert.equal(F.parseNumber(""), null);
   assert.equal(F.parseNumber("–"), null);
@@ -31,7 +34,13 @@ test("CHF formatting uses Swiss grouping and non-breaking spaces", () => {
 });
 
 test("French formatting groups with a non-breaking space", () => {
-  assert.match(F.chf(1140, "fr"), /^CHF 1 140$/);
+  assert.match(F.chf(1140, "fr"), /^CHF\u00a01\u00a0140$/);
+});
+
+test("decimal trims trailing zeros", () => {
+  assert.equal(F.decimal(8.1), "8.1");
+  assert.equal(F.decimal(8), "8");
+  assert.equal(F.decimal(8.1, "fr"), "8,1");
 });
 
 test("dates", () => {
@@ -39,6 +48,7 @@ test("dates", () => {
   assert.equal(F.date("nope"), "");
   assert.equal(F.monthYear("2026-09"), "September 2026");
   assert.equal(F.monthYear("2026-09-01", "fr"), "septembre 2026");
+  assert.equal(F.monthYear("2027-03", "en"), "March 2027");
   assert.equal(F.addDays("2026-12-20", 30), "2027-01-19");
   assert.equal(F.addDays("", 30), "");
 });

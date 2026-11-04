@@ -60,6 +60,7 @@
     docs: [],
     doc: null,
     me: "",
+    overflowPages: [],
   };
 
   function loadSettings() {
@@ -224,9 +225,10 @@
     const hidden = getComputedStyle(preview).display === "none";
     if (hidden) preview.style.cssText = "display:block;position:absolute;visibility:hidden;left:-10000px;top:0";
     try {
-      R.render(root, state.doc, state.settings);
+      state.overflowPages = R.render(root, state.doc, state.settings).overflowPages;
     } catch (err) {
       console.error(err);
+      state.overflowPages = [];
       root.replaceChildren(h("p", { class: "hint", text: "Vorschau nicht möglich – bitte Eingaben prüfen." }));
     }
     if (hidden) preview.style.cssText = "";
@@ -235,6 +237,7 @@
     $("#doc-filename").textContent = `${M.fileName(state.doc, state.settings)}.pdf`;
     $("#contract-from-offer").hidden = state.doc.type !== "offer";
     fitPreview(stage);
+    refreshChecklist();
   }
 
   function fitPreview(stage = $("#preview-stage")) {
@@ -407,6 +410,7 @@
 
   function refreshChecklist() {
     const issues = M.validate(state.doc, state.settings);
+    for (const n of state.overflowPages) issues.push({ field: "", message: `Seite ${n}: Inhalt ist zu lang und wird abgeschnitten – Text kürzen.` });
     const box = $("#checklist");
     if (!box) return;
     $("#editor-title").textContent = state.doc.customer.company.trim() || "Neuer Kunde";
@@ -415,10 +419,11 @@
       box.replaceChildren(h("div", { class: "checklist is-done", text: "Alles erfasst – bereit für das PDF." }));
       return;
     }
-    for (const issue of issues) document.querySelector(`.field[data-field="${CSS.escape(issue.field)}"]`)?.classList.add("is-missing");
+    for (const issue of issues) if (issue.field) document.querySelector(`.field[data-field="${CSS.escape(issue.field)}"]`)?.classList.add("is-missing");
     box.replaceChildren(h("div", { class: "checklist" },
       h("strong", { text: `Noch offen (${issues.length})` }),
       h("ul", {}, issues.map((issue) => {
+        if (!issue.field) return h("li", { text: issue.message });
         const btn = h("button", { type: "button", text: issue.message });
         btn.addEventListener("click", () => focusField(issue.field));
         return h("li", {}, btn);
@@ -721,7 +726,7 @@
           number("Package-Aufpreis (CHF/Monat)", c.packageSurcharge, (v) => update((x) => (x.contract.packageSurcharge = v)))),
         segmented("Preise", [["excl", "exkl. MwSt"], ["incl", "inkl. MwSt"]], c.vatMode, (v) => update((x) => (x.contract.vatMode = v))),
         h("div", { class: "row" },
-          text("Kündigungsfrist", c.noticePeriod, (v) => update((x) => (x.contract.noticePeriod = v)), { hint: "z. B. «14 Tage»" }),
+          numberOrText("Kündigungsfrist (Tage)", c.noticePeriod, (v) => update((x) => (x.contract.noticePeriod = v)), { hint: "Zahl = Tage, wird übersetzt" }),
           number("Anzahlung (CHF, optional)", c.downPayment, (v) => update((x) => (x.contract.downPayment = v)))),
         c.kind !== "takeover" ? text("Fahrzeug-ID(s) (optional)", c.vehicleIds, (v) => update((x) => (x.contract.vehicleIds = v))) : null,
       ], { id: "sec-terms" }),
@@ -1054,7 +1059,7 @@
       checkbox("Offerten als «indikativ» bezeichnen", d.offerIndicative, (v) => set((s) => (s.defaults.offerIndicative = v))),
       h("div", { class: "row" },
         number("Mehrkilometer (CHF/km)", d.extraKmRate, (v) => set((s) => (s.defaults.extraKmRate = v))),
-        text("Kündigungsfrist", d.noticePeriod, (v) => set((s) => (s.defaults.noticePeriod = v)))),
+        numberOrText("Kündigungsfrist (Tage)", d.noticePeriod, (v) => set((s) => (s.defaults.noticePeriod = v)))),
       text("Insurance-Packages (mit Komma)", d.insurancePackages.join(", "), (v) => set((s) => (s.defaults.insurancePackages = listToStrings(v)))),
       text("Package Types (mit Komma)", d.packageTypes.join(", "), (v) => set((s) => (s.defaults.packageTypes = listToStrings(v)))),
     ];

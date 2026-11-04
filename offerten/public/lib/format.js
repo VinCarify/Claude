@@ -8,22 +8,24 @@ globalThis.CarifyFormat = (function () {
   // Non-breaking space: amounts never wrap away from their unit.
   const NBSP = "\u00a0";
 
-  const LOCALES = { de: "de-CH", fr: "fr-CH" };
+  const LOCALES = { de: "de-CH", fr: "fr-CH", en: "en-CH" };
   const locale = (lang) => LOCALES[lang] || LOCALES.de;
 
   const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 
-  // "1'140", "0.53" -> number; "", "–", "abc" -> null. Accepts ’ ' and spaces as group separators
-  // and a comma as decimal separator, because people paste prices from everywhere.
+  // "1'140", "0.53", "30.-" -> number; "", "–", "abc" -> null. Accepts ’ ' and spaces as group
+  // separators and a comma as decimal separator, because people paste prices from everywhere.
   function parseNumber(value) {
     if (isNum(value)) return value;
     if (typeof value !== "string") return null;
-    const cleaned = value
+    let cleaned = value
       .trim()
       .replace(/^CHF\s*/i, "")
       .replace(/\s*CHF$/i, "")
-      .replace(/[\s  ’'`]/g, "")
-      .replace(",", ".");
+      .replace(/\.[-–]$/, "")
+      .replace(/[\s\u00a0\u202f\u2019'`]/g, "");
+    // "1,140" from an English spreadsheet is grouping, "0,53" is a decimal comma.
+    cleaned = /^-?\d{1,3}(,\d{3})+$/.test(cleaned) ? cleaned.replace(/,/g, "") : cleaned.replace(",", ".");
     if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return null;
     return Number(cleaned);
   }
@@ -33,7 +35,13 @@ globalThis.CarifyFormat = (function () {
     const d = decimals ?? (Number.isInteger(n) ? 0 : 2);
     const nf = new Intl.NumberFormat(locale(lang), { minimumFractionDigits: d, maximumFractionDigits: d });
     // `n === 0` is also true for -0, which Intl would print as "-0".
-    return nf.format(n === 0 ? 0 : n).replace(/ /g, NBSP);
+    return nf.format(n === 0 ? 0 : n).replace(/\u202f/g, NBSP);
+  }
+
+  // 8.1 → "8.1", 8 → "8" (rates, no trailing zeros)
+  function decimal(n, lang) {
+    if (!isNum(n)) return "";
+    return new Intl.NumberFormat(locale(lang), { maximumFractionDigits: 2 }).format(n).replace(/\u202f/g, NBSP);
   }
 
   // "CHF 1’140" (contract style) – decimals only when there are cents.
@@ -98,5 +106,5 @@ globalThis.CarifyFormat = (function () {
       .slice(0, 80);
   }
 
-  return { NBSP, isNum, parseNumber, number, chf, chfAfter, chf2, parseIsoDate, toIsoDate, date, monthYear, addDays, fileSafe };
+  return { NBSP, isNum, parseNumber, number, decimal, chf, chfAfter, chf2, parseIsoDate, toIsoDate, date, monthYear, addDays, fileSafe };
 })();

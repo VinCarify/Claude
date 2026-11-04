@@ -199,30 +199,34 @@ globalThis.CarifyRender = (function () {
 
   const overflows = (body) => body.scrollHeight > body.clientHeight + 1;
 
-  // Places blocks onto pages. A block is { el, keepWithNext?, table? } where table = { id, make }
-  // for rows (<tr>) that belong into a table with a repeated header.
+  // Places blocks onto pages. A block is { el, keepWithNext?, group? }.
+  // group = { id, make, slot?, merge? } puts the element into a container that is created again on
+  // every page (table rows into a table with a repeated header, option cards into a grid).
+  // merge(el) may fold the element into the previous one (shared vehicle cell) and returns an undo.
   function flow(blocks, newPage) {
     let current = newPage();
     const pages = [current];
     let placed = [];
 
     const place = (block, target) => {
-      if (!block.table) {
+      if (!block.group) {
         target.body.append(block.el);
         return () => block.el.remove();
       }
-      let table = target.body.lastElementChild;
+      let box = target.body.lastElementChild;
       let created = false;
-      if (!table || table.dataset.table !== block.table.id) {
-        table = block.table.make();
-        table.dataset.table = block.table.id;
-        target.body.append(table);
+      if (!box || box.dataset.group !== block.group.id) {
+        box = block.group.make();
+        box.dataset.group = block.group.id;
+        target.body.append(box);
         created = true;
       }
-      table.tBodies[0].append(block.el);
+      (block.group.slot ? block.group.slot(box) : box).append(block.el);
+      const unmerge = block.group.merge ? block.group.merge(block.el) : null;
       return () => {
+        if (unmerge) unmerge();
         block.el.remove();
-        if (created) table.remove();
+        if (created) box.remove();
       };
     };
 
@@ -246,6 +250,31 @@ globalThis.CarifyRender = (function () {
       for (const b of [...carry, block]) placed.push({ block: b, undo: place(b, current) });
     }
     return pages;
+  }
+
+  // Pages whose content does not fit (a single block taller than a page, very long texts).
+  function markOverflow(root) {
+    const pages = [...root.querySelectorAll(".doc-page")];
+    const over = [];
+    pages.forEach((page, i) => {
+      const box = page.querySelector(".doc-body") || page;
+      if (box.scrollHeight > box.clientHeight + 1) {
+        page.dataset.overflow = "1";
+        over.push(i + 1);
+      }
+    });
+    return over;
+  }
+
+  // New pages of one kind; the first one gets "is-first-page" (title area, address block).
+  function pageFactory(root, kind, ctx, opts) {
+    let count = 0;
+    return () => {
+      const shell = pageShell(root, kind, ctx, opts);
+      if (count === 0) shell.page.classList.add("is-first-page");
+      count += 1;
+      return shell;
+    };
   }
 
   function numberPages(root) {
@@ -309,7 +338,6 @@ globalThis.CarifyRender = (function () {
 
   function letterPage(root, ctx, doc, view) {
     const { t } = ctx;
-    const { body } = pageShell(root, "letter", ctx);
     const c = doc.contact;
     const recipient = [
       view.vars.anrede,
@@ -319,14 +347,21 @@ globalThis.CarifyRender = (function () {
       [doc.customer.zip.trim(), doc.customer.city.trim()].filter(Boolean).join(" "),
     ].filter(Boolean);
     const own = view.owner;
-    body.append(
-      h("div", { class: "letter-recipient" }, recipient.map((l) => h("p", { text: l }))),
-      h("div", { class: "letter-titlerow" }, h("h1", { class: "letter-title", text: t.letterTitle }), h("span", { class: "letter-date", text: F.date(doc.date) })),
-      h("div", { class: "letter-body" },
-        rich(M.richText(t.letterBody, view.vars, { inhalt: view.contents })),
-        own ? h("div", { class: "letter-sign" },
+    const letter = { id: "letter", make: () => h("div", { class: "letter-body" }) };
+    const blocks = [
+      { el: h("div", { class: "letter-recipient" }, recipient.map((l) => h("p", { text: l }))) },
+      { el: h("div", { class: "letter-titlerow" }, h("h1", { class: "letter-title", text: t.letterTitle }), h("span", { class: "letter-date", text: F.date(doc.date) })) },
+      ...rich(M.richText(t.letterBody, view.vars, { inhalt: view.contents })).map((el) => ({ el, group: letter })),
+    ];
+    if (own) {
+      blocks.push({
+        el: h("div", { class: "letter-sign" },
           h("p", {}, h("strong", { text: own.name }), own.role ? [h("br"), own.role] : null),
-          own.phone || own.email ? h("p", { class: "letter-contact" }, t.letterContactLabel, own.phone ? [h("br"), own.phone] : null, own.email ? [h("br"), own.email] : null) : null) : null));
+          own.phone || own.email ? h("p", { class: "letter-contact" }, t.letterContactLabel, own.phone ? [h("br"), own.phone] : null, own.email ? [h("br"), own.email] : null) : null),
+        group: letter,
+      });
+    }
+    flow(blocks, pageFactory(root, "letter", ctx));
   }
 
   function whyChart(t) {
@@ -368,8 +403,8 @@ globalThis.CarifyRender = (function () {
       vehicle: t.colVehicle,
       term: t.colTerm,
       km: t.colKm,
-      priceExcl: view.columns.includes("priceIncl") ? t.colPriceExcl : t.colPrice + "*",
-      priceIncl: view.columns.includes("priceExcl") ? t.colPriceIncl : t.colPrice + "*",
+      priceExcl: t.colPriceExcl,
+      priceIncl: t.colPriceIncl,
       insurance: t.colInsurance,
     };
     return () => h("table", { class: `price-table cols-${view.columns.length}` },
@@ -396,38 +431,43 @@ globalThis.CarifyRender = (function () {
     return h("tr", { class: index === 0 ? "is-first" : null, dataset: { vehicle: vehicle.id } }, view.columns.map((c) => cells[c]));
   }
 
-  // After pagination: rows of the same vehicle on one page share one vehicle cell.
-  function mergeVehicleCells(root) {
-    for (const tbody of root.querySelectorAll(".price-table tbody")) {
-      let anchor = null;
-      let span = 0;
-      for (const tr of [...tbody.rows]) {
-        if (anchor && tr.dataset.vehicle === anchor.parentElement.dataset.vehicle) {
-          span += 1;
-          anchor.rowSpan = span;
-          tr.querySelector(".col-vehicle")?.remove();
-          tr.classList.add("is-continued");
-        } else {
-          anchor = tr.querySelector(".col-vehicle");
-          span = 1;
-          tr.classList.add("is-first");
-        }
-      }
-    }
+  // Rows of the same vehicle on one page share one vehicle cell. Done while placing, so the
+  // pagination measures the merged (shorter) rows.
+  function mergeVehicleRow(tr) {
+    const prev = tr.previousElementSibling;
+    if (!prev || prev.dataset.vehicle !== tr.dataset.vehicle) return null;
+    let anchorRow = prev;
+    while (anchorRow && !anchorRow.querySelector(".col-vehicle")) anchorRow = anchorRow.previousElementSibling;
+    const anchor = anchorRow?.querySelector(".col-vehicle");
+    const cell = tr.querySelector(".col-vehicle");
+    if (!anchor || !cell) return null;
+    cell.remove();
+    anchor.rowSpan += 1;
+    tr.classList.add("is-continued");
+    return () => {
+      anchor.rowSpan -= 1;
+      tr.prepend(cell);
+      tr.classList.remove("is-continued");
+    };
   }
 
   // Optional page with add-on options (cards with title, price line, text and bullets).
   function optionsPage(root, ctx, view) {
     const { t } = ctx;
-    const { body } = pageShell(root, "options", ctx);
-    append(body, [
-      h("h1", { class: "why-title", text: t.optionsTitle }),
-      t.optionsIntro ? h("div", { class: "options-intro" }, rich(M.richText(t.optionsIntro, view.vars))) : null,
-      h("div", { class: `options-grid count-${Math.min(view.options.length, 3)}` }, view.options.map((opt) => h("article", { class: "option-card" },
-        h("h2", { class: "option-title", text: opt.title }),
-        opt.price ? h("p", { class: "option-price", text: opt.price }) : null,
-        opt.text ? h("div", { class: "option-text" }, rich(M.richText(opt.text, view.vars))) : null,
-        Array.isArray(opt.bullets) && opt.bullets.length ? h("ul", { class: "option-bullets" }, opt.bullets.filter(Boolean).map((b) => h("li", { text: b }))) : null)))]);
+    const grid = { id: "options", make: () => h("div", { class: `options-grid count-${Math.min(view.options.length, 3)}` }) };
+    const blocks = [
+      { el: h("h1", { class: "why-title", text: t.optionsTitle }), keepWithNext: true },
+      ...(t.optionsIntro ? [{ el: h("div", { class: "options-intro" }, rich(M.richText(t.optionsIntro, view.vars))), keepWithNext: true }] : []),
+      ...view.options.map((opt) => ({
+        group: grid,
+        el: h("article", { class: "option-card" },
+          h("h2", { class: "option-title", text: opt.title }),
+          opt.price ? h("p", { class: "option-price", text: opt.price }) : null,
+          opt.text ? h("div", { class: "option-text" }, rich(M.richText(opt.text, view.vars))) : null,
+          Array.isArray(opt.bullets) && opt.bullets.length ? h("ul", { class: "option-bullets" }, opt.bullets.filter(Boolean).map((b) => h("li", { text: b }))) : null),
+      })),
+    ];
+    flow(blocks, pageFactory(root, "options", ctx));
   }
 
   function renderOffer(root, doc, settings) {
@@ -440,18 +480,17 @@ globalThis.CarifyRender = (function () {
     if (o.sections.letter) letterPage(root, ctx, doc, view);
     if (o.sections.why) whyPage(root, ctx);
     if (o.sections.prices) {
-      const make = priceTable(view, view.t);
+      const table = { id: "prices", make: priceTable(view, view.t), slot: (box) => box.tBodies[0], merge: mergeVehicleRow };
       const blocks = [];
       view.vehicles.forEach((v) => {
         const rows = v.rows.length ? v.rows : [{ months: "", insurance: null, lines: [] }];
-        rows.forEach((row, i) => blocks.push({ el: priceRow(v, row, i, view, view.t, doc.lang), table: { id: "prices", make } }));
+        rows.forEach((row, i) => blocks.push({ el: priceRow(v, row, i, view, view.t, doc.lang), group: table }));
       });
       if (!blocks.length) blocks.push({ el: h("p", { class: "doc-empty", text: "Noch keine Fahrzeuge mit Preisen erfasst." }) });
       const tail = [...view.notes.map((n) => h("p", { class: "price-note", text: n })), h("div", { class: "price-footnotes" }, view.footnotes.flatMap((f) => lines(f)))];
       tail.forEach((el) => blocks.push({ el }));
       const pages = flow(blocks, () => pageShell(root, "prices", ctx, { bestPrice: true }));
       pages[0].page.id = "doc-prices";
-      mergeVehicleCells(root);
     }
     if (view.options.length) optionsPage(root, ctx, view);
     return view;
@@ -495,47 +534,52 @@ globalThis.CarifyRender = (function () {
           line(t.contractSignSignature, t.contractSignSignatureNote))));
   }
 
-  function formalPages(root, ctx) {
-    let count = 0;
-    return () => {
-      const shell = pageShell(root, "contract", ctx);
-      if (count === 0) shell.page.classList.add("is-first-page");
-      count += 1;
-      return shell;
-    };
-  }
-
   function formalTitle(title, sub) {
     return h("div", { class: "contract-titleblock" }, h("h1", { class: "contract-title", text: title }), sub ? h("p", { class: "contract-number", text: sub }) : null);
+  }
+
+  // Each line of a paragraph becomes its own block, so long clauses can continue on the next page.
+  function splitLines(blocks) {
+    return blocks.flatMap((b) => (b.type === "p" ? b.lines.map((line) => ({ type: "p", lines: [line] })) : [b]));
   }
 
   function renderContract(root, doc, settings) {
     const view = M.contractView(doc, settings);
     const t = view.t;
     const ctx = formalCtx(doc, settings, t);
+    const gridGroup = { id: "grid", make: () => h("dl", { class: "contract-grid" }) };
+    const gridItem = (g) => h("div", { class: "grid-item" }, h("dt", { text: g.label }), h("dd", {}, g.lines.map((l) => h("span", { text: l || "–" }))));
+    // Long fleets: the model list gets its own full-width block, one line per block.
+    const [models, ...rest] = view.grid;
+    const longList = models.lines.length > 6;
+    const modelGroup = { id: "models", make: () => h("div", { class: "contract-models" }) };
     const blocks = [
       { el: formalTitle(t.contractTitle, view.subtitle) },
       { el: partiesBox(view, t) },
       { el: h("p", { class: "contract-lead", text: view.intro }), keepWithNext: true },
-      { el: h("dl", { class: "contract-grid" }, view.grid.map((g) => h("div", { class: "grid-item" }, h("dt", { text: g.label }), h("dd", {}, g.lines.map((l) => h("span", { text: l || "–" })))))) },
+      ...(longList
+        ? [{ el: h("p", { class: "contract-models-label", text: models.label }), keepWithNext: true }, ...models.lines.map((l) => ({ el: h("span", { text: l }), group: modelGroup }))]
+        : [{ el: gridItem(models), group: gridGroup }]),
+      ...rest.map((g) => ({ el: gridItem(g), group: gridGroup })),
       { el: h("p", { class: "contract-small", text: t.contractReplacement }) },
       { el: h("h2", { class: "contract-h2", text: t.contractRateTitle }), keepWithNext: true },
-      ...rich(view.rateBlocks, "contract-text").map((el) => ({ el })),
+      ...rich(splitLines(view.rateBlocks), "contract-text").map((el) => ({ el })),
       { el: signatures(view, t) },
       { el: h("p", { class: "contract-footnote", text: t.contractFootnote }) },
     ];
-    flow(blocks, formalPages(root, ctx));
+    flow(blocks, pageFactory(root, "contract", ctx));
     numberPages(root);
     return view;
   }
 
   // ---------------------------------------------------------------------------
 
+  // Returns { view, overflowPages } – overflowPages lists 1-based pages whose content is cut off.
   function render(root, doc, settings) {
     root.replaceChildren();
     root.lang = doc.lang === "fr" ? "fr-CH" : doc.lang === "en" ? "en" : "de-CH";
-    if (doc.type === "offer") return renderOffer(root, doc, settings);
-    return renderContract(root, doc, settings);
+    const view = doc.type === "offer" ? renderOffer(root, doc, settings) : renderContract(root, doc, settings);
+    return { view, overflowPages: markOverflow(root) };
   }
 
   return { render, h };

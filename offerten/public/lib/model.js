@@ -42,10 +42,24 @@ globalThis.CarifyModel = (function () {
       const here = path ? `${path}.${key}` : key;
       const freeForm = path === "texts" || /^texts\.\w+$/.test(path);
       if (!Object.hasOwn(base, key) && !freeForm) continue;
-      if (isObj(base[key]) && isObj(value)) mergeInto(base[key], value, here);
-      else if (value !== undefined) base[key] = clone(value);
+      const current = base[key];
+      if (isObj(current) && isObj(value)) mergeInto(current, value, here);
+      else if (value === undefined || !sameShape(current, value)) continue;
+      else base[key] = typeof current === "string" && typeof value === "number" ? String(value) : clone(value);
     }
     return base;
+  }
+
+  // Keeps hand-edited or old files from replacing an object with null, a list with a string etc.
+  // A null in the base stands for an optional scalar (e.g. extraKmRate) and accepts any scalar.
+  function sameShape(current, value) {
+    if (current === undefined) return true;
+    if (Array.isArray(current)) return Array.isArray(value);
+    if (isObj(current) || Array.isArray(value) || isObj(value)) return false;
+    if (current === null) return true;
+    if (typeof current === "string") return typeof value === "string" || typeof value === "number";
+    if (typeof current === "number") return typeof value === "number" || value === null;
+    return typeof value === typeof current;
   }
 
   function mergeSettings(imported) {
@@ -259,16 +273,18 @@ globalThis.CarifyModel = (function () {
       c.km = picked[0].km;
       c.months = picked[0].months;
       c.vatMode = offer.offer.vatMode === "incl" ? "incl" : "excl";
-      if (F.isNum(picked[0].insurance)) c.insuranceSurcharge = picked[0].insurance;
+      const vatRate = Number(settings.defaults.vatRate) || 0;
+      const toContract = (n) => (offer.offer.vatMode === "incl" ? vatIncl(n, vatRate) : n);
+      if (F.isNum(picked[0].insurance)) c.insuranceSurcharge = toContract(picked[0].insurance);
       c.items = picked.map((o) => {
         const vehicle = offer.offer.vehicles.find((v) => v.id === o.vehicleId);
         const item = newContractItem(settings);
         const extras = [vehicle?.fuel, vehicle?.gearbox].map((x) => str(x).trim()).filter(Boolean).join(" & ");
         item.model = [o.model, extras].filter(Boolean).join(" - ");
-        item.rate = offer.offer.vatMode === "incl" ? vatIncl(o.price, Number(settings.defaults.vatRate) || 0) : o.price;
+        item.rate = toContract(o.price);
         return item;
       });
-      doc.contractMismatch = picked.some((o) => o.km !== c.km || o.months !== c.months);
+      doc.contractMismatch = picked.some((o) => o.km !== c.km || o.months !== c.months || (o.insurance ?? null) !== (picked[0].insurance ?? null));
     }
     return doc;
   }
@@ -384,7 +400,8 @@ globalThis.CarifyModel = (function () {
         link: /^https:\/\//i.test(v.link.trim()) ? v.link.trim() : "",
         rows: pricedRows(v, o.hideEmptyRows).map((r) => ({
           months: r.months,
-          insurance: F.isNum(r.insurance) ? r.insurance : null,
+          // surcharges are entered excl. VAT like the prices; "incl" shows every amount incl. VAT
+          insurance: F.isNum(r.insurance) ? (o.vatMode === "incl" ? vatIncl(r.insurance, rate) : r.insurance) : null,
           lines: v.kms.map((km) => ({ km, price: r.prices[km], priceIncl: vatIncl(r.prices[km], rate) })),
         })),
       }))
@@ -400,7 +417,7 @@ globalThis.CarifyModel = (function () {
     vars.gueltig_tage = String(o.validityDays ?? "");
     vars.gueltig_bis = F.date(validUntil);
     vars.indikativ = o.indicative ? t.indicativeWord : "";
-    vars.mwst_satz = `${F.number(rate, doc.lang)}%`;
+    vars.mwst_satz = `${F.decimal(rate, doc.lang)}%`;
     vars.mwst_hinweis = fill(o.vatMode === "incl" ? t.vatIncl : o.vatMode === "both" ? t.vatBoth : t.vatExcl, vars);
     vars.zum_fahrzeug = vehicles.length > 1 ? t.vehiclePlural : t.vehicleSingular;
 
@@ -412,7 +429,10 @@ globalThis.CarifyModel = (function () {
     if (showOptions) contents.push(t.optionsTitle);
 
     const notes = [];
-    if (F.isNum(o.privateSurcharge)) notes.push(fill(t.privateSurchargeNote, { betrag: F.chf(o.privateSurcharge, doc.lang) }));
+    if (F.isNum(o.privateSurcharge)) {
+      const amount = o.vatMode === "incl" ? vatIncl(o.privateSurcharge, rate) : o.privateSurcharge;
+      notes.push(fill(t.privateSurchargeNote, { betrag: F.chf(amount, doc.lang) }));
+    }
 
     const footnotes = [fill(t.validityNote, vars), t.footnoteTerm, t.footnoteKm].filter((s) => str(s).trim());
 
@@ -471,7 +491,7 @@ globalThis.CarifyModel = (function () {
 
     const vars = baseVars(doc, settings, t);
     vars.mwst = c.vatMode === "incl" ? t.contractVatIncl : t.contractVatExcl;
-    vars.kuendigungsfrist = str(c.noticePeriod);
+    vars.kuendigungsfrist = F.isNum(c.noticePeriod) ? fill(t.contractNoticeDays, { tage: String(c.noticePeriod) }) : str(c.noticePeriod);
     vars.vertragsnummer = str(c.number);
 
     // Monthly fee sentence: one vehicle / several of one model / several model groups
@@ -540,21 +560,15 @@ globalThis.CarifyModel = (function () {
   // Names, e-mail, validation
   // ---------------------------------------------------------------------------
 
-  const FILE_PATTERNS = {
-    offer: "Offerte {{nachname}} ({{firma}})",
-    new: "CARIFY Vertrag - {{firma}}",
-    adjustment: "CARIFY Vertrag - {{firma}} - Anpassung",
-    takeover: "CARIFY Vertragsanpassung - {{firma}}",
-  };
-
+  // Same naming as before: "Offerte Nachname (Firma)", "CARIFY Vertrag - Firma".
   function fileName(doc, settings) {
-    const t = texts(settings, doc.lang);
-    const vars = baseVars(doc, settings, t);
-    const pattern = doc.type === "offer" ? FILE_PATTERNS.offer : FILE_PATTERNS[doc.contract.kind] || FILE_PATTERNS.new;
-    let name = fill(pattern, vars)
-      .replace(/\(\s*\)/g, "")
-      .replace(/\s+-\s*$/, "");
-    if (!vars.firma && !vars.nachname) name = name.replace(/\s+$/, "") + ` ${F.date(doc.date)}`;
+    const firma = doc.customer.company.trim();
+    const nachname = doc.contact.lastName.trim();
+    let name;
+    if (doc.type === "offer") name = ["Offerte", nachname, firma ? `(${firma})` : ""].filter(Boolean).join(" ");
+    else if (doc.contract.kind === "takeover") name = ["CARIFY Vertragsanpassung", firma].filter(Boolean).join(" - ");
+    else name = ["CARIFY Vertrag", firma, doc.contract.kind === "adjustment" ? "Anpassung" : ""].filter(Boolean).join(" - ");
+    if (!firma && !nachname) name += ` ${F.date(doc.date)}`;
     return F.fileSafe(name) || "CARIFY Dokument";
   }
 
@@ -598,7 +612,8 @@ globalThis.CarifyModel = (function () {
       }
     } else {
       const c = doc.contract;
-      if (c.kind !== "takeover") need(c.number.trim(), "contract.number", "Vertragsnummer fehlt.");
+      if (c.kind !== "takeover") need(str(c.number).trim(), "contract.number", "Vertragsnummer fehlt.");
+      if (F.isNum(c.packageSurcharge)) need(str(c.packageType).trim(), "contract.packageType", "Package Type fehlt (wegen Package-Aufpreis).");
       need(doc.customer.street.trim() && doc.customer.zip.trim() && doc.customer.city.trim(), "customer.address", "Anschrift des Kunden unvollständig.");
       need(settings.company.street && settings.company.city, "settings.company", "CARIFY-Anschrift fehlt (Einstellungen → Firma).");
       need(c.start, "contract.start", "Geplanter Abobeginn fehlt.");
