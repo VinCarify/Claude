@@ -1,0 +1,9 @@
+node_modules
+.netlify
+
+# Firmendaten (Adresse, Preise, Texte, Logo) – nie committen, das Repo ist öffentlich
+*.local.json
+carify-einstellungen*.json
+# Entwürfe-Backups enthalten Kundendaten
+carify-entwuerfe*.json
+*.pdf

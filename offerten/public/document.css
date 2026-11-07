@@ -1,0 +1,1101 @@
+/* CARIFY Offerten & Verträge – the A4 document (screen preview and print).
+   Measures follow the Canva offer template: 794 × 1123 px page (= A4 at 96 dpi), 79 px (21 mm)
+   side margins, orange #ec7533, grey #6a7282, Inter. Only self-hosted fonts (CSP 'self'). */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(fonts/inter-latin-400-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(fonts/inter-latin-ext-400-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url(fonts/inter-latin-400-italic.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url(fonts/inter-latin-ext-400-italic.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url(fonts/inter-latin-500-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url(fonts/inter-latin-ext-500-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url(fonts/inter-latin-600-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url(fonts/inter-latin-ext-600-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url(fonts/inter-latin-700-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url(fonts/inter-latin-ext-700-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+.doc {
+  --d-orange: #ec7533;
+  --d-orange-soft: #ef905b;
+  --d-orange-wash: #fdf1ea;
+  --d-ink: #111111;
+  --d-grey: #6a7282;
+  --d-grey-2: #8a919e;
+  --d-line: #d9dce2;
+  --d-line-soft: #eceef2;
+  --d-gold: #c9a227;
+  --d-margin: 79px;
+
+  /* Documents are always light, also when the app runs in dark mode. */
+  color-scheme: light;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.doc-page {
+  position: relative;
+  box-sizing: border-box;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: #ffffff;
+  color: var(--d-ink);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+
+.doc-page *,
+.doc-page *::before,
+.doc-page *::after {
+  box-sizing: border-box;
+}
+
+/* Zero specificity, so component classes below can set their own margins. */
+:where(.doc-page) :where(p, h1, h2, ul, dl, dd) {
+  margin: 0;
+}
+
+.doc-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------------ chrome */
+
+.doc-header {
+  position: absolute;
+  top: 34px;
+  left: var(--d-margin);
+  right: var(--d-margin);
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.doc-logo {
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  margin-right: -0.34em;
+  line-height: 1;
+  color: #000;
+  white-space: nowrap;
+}
+
+.doc-logo--img {
+  display: block;
+  height: 36px;
+  width: auto;
+  margin-right: 0;
+}
+
+img.doc-logo--cover {
+  height: 44px;
+}
+
+.doc-header--formal .doc-logo--img {
+  height: 26px;
+}
+
+.doc-badges {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.doc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.doc-badge--swiss {
+  color: #e42322;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.badge-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.doc-badge--seal {
+  color: #8a6d12;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.badge-seal {
+  width: 32px;
+  height: 32px;
+}
+
+.doc-badge--rating {
+  color: var(--d-grey);
+  font-size: 12px;
+}
+
+.doc-badge--rating strong {
+  color: var(--d-ink);
+  font-size: 15px;
+}
+
+.badge-stars {
+  width: 70px;
+  height: 14px;
+}
+
+.doc-body {
+  position: absolute;
+  top: 122px;
+  left: var(--d-margin);
+  right: var(--d-margin);
+  bottom: 84px;
+  overflow: hidden;
+}
+
+.has-bestprice .doc-body {
+  bottom: 178px;
+}
+
+.doc-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 58px;
+  padding: 0 var(--d-margin);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: var(--d-orange-soft);
+  color: #fff;
+}
+
+.band-claim {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.band-icon {
+  width: 30px;
+  height: 22px;
+  fill: #fff;
+}
+
+.band-refs {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.band-ref {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+
+.band-ref-logo {
+  height: 24px;
+  width: auto;
+}
+
+.doc-bestprice {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 78px;
+  height: 74px;
+  padding: 0 var(--d-margin) 0 132px;
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  align-items: center;
+  gap: 24px;
+  background: var(--d-orange);
+  color: #fff;
+}
+
+.bestprice-seal {
+  position: absolute;
+  left: 40px;
+  top: -8px;
+  width: 80px;
+  height: 80px;
+}
+
+.seal-text {
+  fill: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.bestprice-title {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.bestprice-text {
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.doc-header--formal {
+  top: 40px;
+}
+
+.doc-header--formal .doc-logo {
+  font-size: 22px;
+}
+
+.doc-page--contract .doc-body {
+  top: 112px;
+  bottom: 66px;
+}
+
+/* The first contract page starts with the title next to the logo. */
+.doc-page--contract.is-first-page .doc-body {
+  top: 38px;
+}
+
+.doc-footer {
+  position: absolute;
+  left: var(--d-margin);
+  right: var(--d-margin);
+  bottom: 30px;
+  padding-top: 9px;
+  border-top: 1px solid var(--d-line);
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 10.5px;
+  color: var(--d-grey);
+}
+
+.doc-pageno {
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ cover */
+
+.doc-page--cover {
+  display: flex;
+  flex-direction: column;
+  padding: 79px var(--d-margin) 0;
+}
+
+.doc-logo--cover {
+  font-size: 34px;
+}
+
+.cover-for {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--d-grey);
+  letter-spacing: 0.01em;
+}
+
+.cover-intro {
+  margin-top: 40px;
+  max-width: 500px;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--d-grey);
+}
+
+.cover-intro p + p {
+  margin-top: 16px;
+}
+
+.cover-cta {
+  display: inline-block;
+  margin-top: 34px;
+  padding: 12px 40px;
+  border-radius: 999px;
+  background: var(--d-orange);
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.cover-visual,
+.cover-image {
+  margin-top: auto;
+  margin-bottom: 26px;
+}
+
+.cover-image {
+  display: block;
+  width: 100%;
+  max-height: 470px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.cover-visual-card {
+  position: relative;
+  height: 380px;
+  border-radius: 28px;
+  padding: 40px 44px;
+  overflow: hidden;
+  background:
+    radial-gradient(420px 260px at 92% 8%, rgba(255, 255, 255, 0.22), transparent 70%),
+    linear-gradient(135deg, #ef8a4c 0%, #ec7533 55%, #df6424 100%);
+  color: #fff;
+}
+
+.cover-visual-claim {
+  display: block;
+  max-width: 380px;
+  font-size: 40px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.cover-car {
+  position: absolute;
+  right: -40px;
+  bottom: 82px;
+  width: 400px;
+  height: 175px;
+}
+
+.cover-car .car-body {
+  fill: #fff;
+}
+
+.cover-car .car-wheel {
+  fill: #2b2b2b;
+  stroke: #fff;
+  stroke-width: 1.6;
+}
+
+.cover-visual-chips {
+  position: absolute;
+  left: 44px;
+  right: 44px;
+  bottom: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cover-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--d-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cover-chip .line-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.cover-trust {
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid var(--d-line-soft);
+}
+
+.cover-trust .doc-badges {
+  gap: 48px;
+}
+
+.line-icon {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--d-orange);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ------------------------------------------------------------------ letter */
+
+.doc-page--letter.is-first-page .doc-body {
+  top: 190px;
+}
+
+.letter-recipient {
+  font-size: 18.5px;
+  line-height: 1.2;
+}
+
+.letter-titlerow {
+  margin-top: 96px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  font-size: 18.5px;
+}
+
+.letter-title {
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--d-orange);
+}
+
+.letter-body {
+  margin-top: 56px;
+  padding-left: 10px;
+  font-size: 15.5px;
+  line-height: 1.45;
+}
+
+.letter-body > p + p,
+.letter-body > p + ul,
+.letter-body > ul + p,
+.letter-sign {
+  margin-top: 18px;
+}
+
+.letter-body ul {
+  padding-left: 22px;
+}
+
+.letter-body li + li {
+  margin-top: 2px;
+}
+
+.letter-sign {
+  margin-top: 34px;
+}
+
+.letter-contact {
+  margin-top: 28px;
+}
+
+/* ------------------------------------------------------------------ why */
+
+.doc-page--why .doc-body {
+  top: 110px;
+}
+
+.why-title {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.why-top {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 250px;
+  gap: 18px;
+  align-items: start;
+}
+
+.why-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-axis {
+  fill: none;
+  stroke: var(--d-ink);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-axis-label {
+  font-size: 11px;
+  fill: var(--d-ink);
+}
+
+.chart-hi {
+  fill: var(--d-orange-soft);
+  opacity: 0.85;
+}
+
+.chart-car .car-body {
+  fill: #3b3f47;
+}
+
+.chart-car .car-wheel {
+  fill: #111;
+  stroke: #fff;
+  stroke-width: 1.2;
+}
+
+.is-hi .chart-car .car-body {
+  fill: #fff;
+}
+
+.chart-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--d-ink);
+}
+
+.chart-range {
+  font-size: 9px;
+  fill: var(--d-grey);
+}
+
+.why-callout {
+  padding: 18px 20px;
+  border-radius: 4px;
+  background: var(--d-orange-soft);
+  color: #fff;
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+
+.why-services {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.why-service {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--d-grey);
+}
+
+.why-service strong {
+  color: var(--d-ink);
+  font-size: 12.5px;
+}
+
+.why-service-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--d-orange-wash);
+}
+
+.why-image {
+  display: block;
+  margin: 18px auto 0;
+  max-width: 100%;
+  max-height: 330px;
+}
+
+.why-usps {
+  margin-top: 34px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 40px;
+}
+
+.why-usp strong {
+  display: block;
+  font-size: 15.5px;
+}
+
+.why-usp p {
+  margin-top: 4px;
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--d-grey);
+}
+
+/* ------------------------------------------------------------------ prices */
+
+.doc-page--prices .doc-body {
+  top: 116px;
+}
+
+.price-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 15px;
+}
+
+.price-table th,
+.price-table td {
+  border: 1px solid var(--d-line);
+  padding: 13px 12px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.price-table thead th {
+  color: var(--d-grey);
+  font-weight: 700;
+  font-size: 14px;
+  padding-top: 11px;
+  padding-bottom: 11px;
+  text-align: center;
+}
+
+.price-table thead th.col-vehicle,
+.price-table td.col-vehicle {
+  text-align: left;
+}
+
+.price-table .col-vehicle {
+  width: 36%;
+}
+
+.price-table.cols-5 .col-vehicle {
+  width: 32%;
+}
+
+.price-table.cols-6 .col-vehicle {
+  width: 28%;
+}
+
+.price-table tr.is-first td {
+  border-top: 2px solid #b9bec8;
+}
+
+.price-table tbody tr:first-child td {
+  border-top-width: 1px;
+  border-top-color: var(--d-line);
+}
+
+.veh-model {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+
+.veh-model a {
+  color: inherit;
+}
+
+.veh-sub {
+  display: block;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--d-grey);
+}
+
+.term-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.col-term {
+  font-size: 15px;
+}
+
+.col-km span,
+.col-price span {
+  display: block;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+.col-price span {
+  font-weight: 700;
+}
+
+td.col-insurance {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.price-table thead th {
+  hyphens: auto;
+}
+
+.price-note {
+  margin-top: 14px;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.price-footnotes {
+  margin-top: 18px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--d-grey);
+}
+
+.doc-empty {
+  padding: 40px 0;
+  color: var(--d-grey);
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------ options */
+
+.doc-page--options .doc-body {
+  top: 110px;
+}
+
+.options-intro {
+  margin-top: 10px;
+  font-size: 14.5px;
+  color: var(--d-grey);
+}
+
+.options-grid {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.options-grid.count-1 {
+  grid-template-columns: 1fr;
+}
+
+.option-card {
+  padding: 20px 22px;
+  border: 1px solid var(--d-line);
+  border-top: 4px solid var(--d-orange);
+  border-radius: 8px;
+}
+
+.option-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.option-price {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--d-orange);
+}
+
+.option-text {
+  margin-top: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--d-grey);
+}
+
+.option-text p + p {
+  margin-top: 8px;
+}
+
+.option-bullets {
+  margin-top: 10px;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------ contract */
+
+.contract-titleblock {
+  max-width: 420px;
+}
+
+.contract-title {
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+.contract-number {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--d-grey);
+}
+
+.contract-parties {
+  margin-top: 24px;
+  padding: 16px 22px;
+  border: 1px solid var(--d-line);
+  border-left: 4px solid var(--d-orange);
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 12px 24px;
+  font-size: 13px;
+}
+
+.party-label {
+  color: var(--d-grey);
+}
+
+.party-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.party-value strong,
+.party-value em {
+  display: block;
+}
+
+.party-value em {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--d-grey);
+}
+
+.contract-lead {
+  margin-top: 22px;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.contract-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 40px;
+}
+
+.grid-item dt {
+  font-size: 11.5px;
+  color: var(--d-grey);
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--d-line-soft);
+  margin-bottom: 5px;
+}
+
+.grid-item dd {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.grid-item dd span {
+  display: block;
+}
+
+.contract-small {
+  margin-top: 12px;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--d-grey);
+}
+
+.contract-h2 {
+  margin-top: 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--d-orange);
+}
+
+.contract-text {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.contract-h2 + .contract-text {
+  margin-top: 6px;
+}
+
+.contract-text + .contract-text {
+  margin-top: 2px;
+}
+
+.contract-text-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.contract-models-label {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--d-grey);
+}
+
+.contract-models {
+  margin-top: 4px;
+  columns: 2;
+  column-gap: 40px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.contract-models span {
+  display: block;
+  break-inside: avoid;
+}
+
+.contract-models + .contract-grid {
+  margin-top: 12px;
+}
+
+.contract-signatures {
+  margin-top: 10px;
+}
+
+.contract-signatures .contract-h2 {
+  margin-top: 20px;
+}
+
+.sign-cols {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+
+.sign-head {
+  display: block;
+  font-size: 13.5px;
+}
+
+.sign-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.sign-line {
+  display: block;
+  margin-top: 26px;
+}
+
+.sign-rule {
+  display: block;
+  border-bottom: 1px solid var(--d-ink);
+}
+
+.sign-caption,
+.sign-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--d-grey);
+}
+
+.sign-note {
+  margin-top: 0;
+  font-size: 9.5px;
+}
+
+.contract-footnote {
+  margin-top: 18px;
+  font-size: 10px;
+  font-style: italic;
+  color: var(--d-grey);
+}
+
+
+/* ------------------------------------------------------------------ print */
+
+@media print {
+  .doc-page {
+    break-after: page;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+
+  .doc-page:last-child {
+    break-after: auto;
+  }
+}

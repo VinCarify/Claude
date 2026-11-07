@@ -1,0 +1,61 @@
+{
+  "schema": "carify-offerten/1",
+  "label": "Testdaten (fiktiv)",
+  "company": {
+    "name": "CARIFY",
+    "legalName": "Muster Abo AG",
+    "street": "Teststrasse 1",
+    "zip": "9999",
+    "city": "Testhausen",
+    "country": "CH",
+    "web": "example.test"
+  },
+  "team": [
+    { "id": "t-alex", "name": "Alex Beispiel", "role": "Key Account Manager", "phone": "+41 00 000 00 00", "email": "alex@example.test" },
+    { "id": "t-kim", "name": "Kim Muster", "role": "Key Account Managerin", "phone": "+41 00 000 00 01", "email": "kim@example.test" }
+  ],
+  "defaults": {
+    "terms": [3, 6, 12, 24, 36],
+    "kmPackages": [1000, 1750, 2500],
+    "vatRate": 8.1,
+    "offerValidityDays": 5,
+    "extraKmRate": 0.5,
+    "noticePeriod": "14 Tage",
+    "insurancePackages": ["BASIS", "PLUS"],
+    "packageTypes": ["Flex", "Fix"]
+  },
+  "branding": {
+    "references": ["Referenz A", "Referenz B"],
+    "badges": [
+      { "type": "swiss", "label": "swiss made software" },
+      { "type": "seal", "label": "TOP 100" },
+      { "type": "rating", "label": "Bewertung", "value": "4.5" }
+    ]
+  },
+  "catalog": [
+    {
+      "id": "cat-1",
+      "model": "TESTMARKE Kombi Sportline",
+      "year": "2026",
+      "fuel": "Benzin",
+      "gearbox": "Automatik",
+      "link": "https://example.test/kombi",
+      "kms": [1000, 1750],
+      "rows": [
+        { "months": 6, "prices": { "1000": 740, "1750": 810 }, "insurance": 50 },
+        { "months": 12, "prices": { "1000": 690, "1750": 760 }, "insurance": null }
+      ],
+      "stand": "01.10.2026"
+    }
+  ],
+  "texts": {
+    "de": {
+      "footerClaim": "Testkunden-Claim",
+      "bestPriceTitle": "Testpreis-Garantie",
+      "bestPriceText": "Fiktiver Text für die Tests.",
+      "options": [
+        { "title": "TESTOPTION", "price": "+ 10 CHF / Fahrzeug und Monat", "text": "Fiktive Option für die Tests.", "bullets": ["Punkt eins", "Punkt zwei"] }
+      ]
+    }
+  }
+}
