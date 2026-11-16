@@ -235,17 +235,17 @@ img.doc-logo--cover {
   width: auto;
 }
 
-/* sizes as in the Canva template */
+/* sizes as in the Canva template, for images trimmed to their content (transparent background) */
 .doc-badge-img--swiss {
-  height: 41px;
+  height: 37px;
 }
 
 .doc-badge-img--seal {
-  height: 59px;
+  height: 45px;
 }
 
 .doc-badge-img--rating {
-  height: 80px;
+  height: 45px;
 }
 
 .doc-body {
@@ -305,11 +305,8 @@ img.doc-logo--cover {
 }
 
 .band-ref-logo {
-  height: 34px;
+  height: 27px;
   width: auto;
-  padding: 3px 10px;
-  border-radius: 6px;
-  background: #fff;
 }
 
 .doc-bestprice {
