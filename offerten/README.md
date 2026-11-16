@@ -63,11 +63,15 @@ JSON mit `"schema": "carify-offerten/1"`. Fehlende Felder werden mit Standardwer
 | `company` | Name, rechtlicher Name, Adresse (für den Vertrag) |
 | `team[]` | `name`, `role`, `phone`, `email` – Absender im Begleitbrief |
 | `defaults` | KM-Pakete, Laufzeiten, MwSt-Satz, Gültigkeit, Mehrkilometer, Kündigungsfrist, Insurance-Packages, Package Types |
-| `branding` | `logo`, `coverImage`, `whyImage` (Data-URLs), `references[]`, `badges[]` |
+| `branding` | `logo`, `coverImage`, `coverLayout` (`bottom` oder `page`), `chartImage`, `whyImage` (Data-URLs), `references[]`, `referenceLogos[]`, `badges[]` (optional mit `image`) |
 | `catalog[]` | Fahrzeuge mit Preismatrix (`kms`, `rows[{months, prices, insurance}]`) |
 | `texts.de/fr/en` | Alle Texte. Platzhalter `{{…}}`, `**fett**`, Leerzeile = Absatz, `• ` = Aufzählung |
 
 Alles lässt sich auch in der App unter **Einstellungen** bearbeiten und wieder exportieren.
+
+### Design-Paket
+
+Original-Grafiken (Deckblatt-Collage, Grafik «Kosten vs. Bindung», Fahrzeuggrafik, Badges, Referenzlogos) kommen als eigenes Paket `carify-design.json` (Schema `carify-offerten-design/1`, nur `branding`). Import unter **Einstellungen → Daten & Import → Design importieren**; Team, Katalog und Texte bleiben unverändert. Das Paket gehört wie die Einstellungsdatei **nicht** ins Repository (`.gitignore`).
 
 ## Code
 

@@ -79,7 +79,31 @@ globalThis.CarifyModel = (function () {
       email: str(m.email),
     }));
     base.catalog = (Array.isArray(base.catalog) ? base.catalog : []).filter(isObj).map(normalizeVehicle);
+    const b = base.branding;
+    b.coverLayout = b.coverLayout === "page" ? "page" : "bottom";
+    b.referenceLogos = b.referenceLogos.filter((x) => typeof x === "string");
+    b.references = b.references.filter((x) => typeof x === "string");
+    b.badges = b.badges.filter(isObj).map((x) => ({ type: str(x.type), label: str(x.label), value: str(x.value), image: str(x.image) }));
     return base;
+  }
+
+  // A design package holds only "branding" (images, badges). It is merged into the current
+  // settings, so team, catalog and texts of this browser stay as they are.
+  const DESIGN_SCHEMA = "carify-offerten-design/1";
+
+  function isDesignPackage(data) {
+    return isObj(data) && typeof data.schema === "string" && data.schema.startsWith("carify-offerten-design/");
+  }
+
+  function mergeDesign(settings, pkg) {
+    if (!isDesignPackage(pkg) || !isObj(pkg.branding)) throw new Error("Das ist kein Design-Paket der Offerten-App.");
+    const next = clone(settings);
+    mergeInto(next.branding, pkg.branding, "branding");
+    return mergeSettings(next);
+  }
+
+  function designPackage(settings) {
+    return { schema: DESIGN_SCHEMA, label: settings.label || "", branding: clone(settings.branding) };
   }
 
   // Texts for a language, falling back to German and then to the built-in defaults for keys
@@ -637,6 +661,9 @@ globalThis.CarifyModel = (function () {
     uid,
     clone,
     mergeSettings,
+    isDesignPackage,
+    mergeDesign,
+    designPackage,
     texts,
     newDocument,
     newVehicle,

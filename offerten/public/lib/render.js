@@ -78,9 +78,12 @@ globalThis.CarifyRender = (function () {
   // Brand elements
   // ---------------------------------------------------------------------------
 
+  // Images come from the settings as data URLs only (nothing is ever loaded from the network).
+  const isImage = (src) => /^data:image\/(png|jpeg|svg\+xml|webp);base64,/.test(src || "");
+
   function logo(settings, cls) {
     const src = settings.branding.logo;
-    if (/^data:image\/(png|jpeg|svg\+xml|webp);base64,/.test(src || "")) {
+    if (isImage(src)) {
       return h("img", { class: `doc-logo doc-logo--img ${cls || ""}`, src, alt: settings.company.name || "CARIFY" });
     }
     return h("span", { class: `doc-logo ${cls || ""}`, text: (settings.company.name || "CARIFY").toUpperCase() });
@@ -103,6 +106,7 @@ globalThis.CarifyRender = (function () {
 
   function badge(b) {
     const label = String(b.label || "").trim();
+    if (isImage(b.image)) return h("img", { class: `doc-badge-img doc-badge-img--${b.type === "swiss" || b.type === "rating" ? b.type : "seal"}`, src: b.image, alt: label });
     if (b.type === "swiss") return h("span", { class: "doc-badge doc-badge--swiss" }, swissCross(), h("span", { text: label || "swiss made software" }));
     if (b.type === "rating") {
       const value = Math.max(0, Math.min(5, F.parseNumber(String(b.value ?? "")) ?? 0));
@@ -129,7 +133,7 @@ globalThis.CarifyRender = (function () {
 
   function badges(settings, where) {
     const list = (settings.branding.badges || [])
-      .filter((b) => b && (b.label || b.type === "swiss"))
+      .filter((b) => b && (b.label || b.type === "swiss" || isImage(b.image)))
       .filter((b) => where === "cover" || b.type !== "rating");
     return list.length ? h("div", { class: "doc-badges" }, list.map(badge)) : null;
   }
@@ -146,7 +150,7 @@ globalThis.CarifyRender = (function () {
 
   function footerBand(settings, t) {
     const refs = settings.branding.referenceLogos?.length
-      ? settings.branding.referenceLogos.filter((src) => /^data:image\//.test(src)).map((src) => h("img", { class: "band-ref-logo", src, alt: "" }))
+      ? settings.branding.referenceLogos.filter(isImage).map((src) => h("img", { class: "band-ref-logo", src, alt: "" }))
       : (settings.branding.references || []).filter(Boolean).map((r) => h("span", { class: "band-ref", text: r }));
     return h("div", { class: "doc-band" },
       t.footerClaim ? h("div", { class: "band-claim" }, peopleIcon(), h("span", { text: t.footerClaim })) : h("span"),
@@ -316,9 +320,11 @@ globalThis.CarifyRender = (function () {
 
   function coverPage(root, ctx, doc, view) {
     const { settings, t } = ctx;
-    const page = h("section", { class: "doc-page doc-page--cover", dataset: { kind: "cover" } });
+    const hasImage = isImage(settings.branding.coverImage);
+    const layer = hasImage && settings.branding.coverLayout === "page";
+    const page = h("section", { class: `doc-page doc-page--cover${layer ? " is-layered" : ""}`, dataset: { kind: "cover" } });
     const firm = doc.customer.company.trim();
-    const visual = /^data:image\//.test(settings.branding.coverImage || "")
+    const visual = hasImage
       ? h("img", { class: "cover-image", src: settings.branding.coverImage, alt: "" })
       : h("div", { class: "cover-visual" },
         h("div", { class: "cover-visual-card" },
@@ -385,7 +391,10 @@ globalThis.CarifyRender = (function () {
   function whyPage(root, ctx) {
     const { settings, t } = ctx;
     const { body } = pageShell(root, "why", ctx);
-    const services = /^data:image\//.test(settings.branding.whyImage || "")
+    const chart = isImage(settings.branding.chartImage)
+      ? h("img", { class: "why-chart-img", src: settings.branding.chartImage, alt: `${t.whyChart?.yAxis || ""} / ${t.whyChart?.xAxis || ""}` })
+      : whyChart(t);
+    const services = isImage(settings.branding.whyImage)
       ? h("img", { class: "why-image", src: settings.branding.whyImage, alt: "" })
       : h("div", { class: "why-services" }, (t.included || []).map((it, i) => h("div", { class: "why-service" },
         h("span", { class: "why-service-icon" }, lineIcon(ICON_ORDER[i % ICON_ORDER.length])),
@@ -393,7 +402,7 @@ globalThis.CarifyRender = (function () {
         h("span", { text: it.text }))));
     body.append(
       h("h1", { class: "why-title", text: t.whyTitle }),
-      h("div", { class: "why-top" }, whyChart(t), h("div", { class: "why-callout" }, rich(M.richText(t.whyLead, {})))),
+      h("div", { class: `why-top${chart.tagName === "IMG" ? " why-top--image" : ""}` }, chart, h("div", { class: "why-callout" }, rich(M.richText(t.whyLead, {})))),
       services,
       h("div", { class: "why-usps" }, (t.usps || []).map((u) => h("div", { class: "why-usp" }, h("strong", { text: u.title }), h("p", { text: u.text })))));
   }
