@@ -975,7 +975,26 @@
     }
   }
 
+  function importDesign(data) {
+    const merged = M.mergeDesign(state.settings, data);
+    if (!store.set(KEYS.settings, merged)) return;
+    state.settings = merged;
+    renderEditor();
+    schedulePreview(0);
+    if ($("#settings-dialog").open) renderSettings();
+    toast("Design importiert – Team, Katalog und Texte bleiben unverändert.");
+  }
+
+  function exportDesign() {
+    download(`carify-design-${today()}.json`, M.designPackage(state.settings));
+    toast("Design exportiert – nur intern teilen, nicht ins Repo.");
+  }
+
   function importSettings(data) {
+    if (M.isDesignPackage(data)) {
+      importDesign(data);
+      return;
+    }
     const merged = M.mergeSettings(data);
     const hadData = state.settings.company.street || state.settings.team.length;
     if (hadData && !confirm("Bestehende Einstellungen in diesem Browser ersetzen?")) return;
@@ -1294,6 +1313,8 @@
       h("p", { class: "lead", text: "Farben und Schrift sind fix im CARIFY-Design. Hier kommen Logo, Bilder und Vertrauenselemente dazu." }),
       imageField("Logo", "Schwarzes CARIFY-Logo, transparent (PNG oder SVG). Ohne Logo wird der Schriftzug gesetzt.", b.logo, (v) => set((s) => (s.branding.logo = v), { settings: true }), { maxWidth: 1200, alpha: true }),
       imageField("Bild Deckblatt", "z. B. die App-Screens aus Canva als PNG. Ohne Bild: orange Grafik.", b.coverImage, (v) => set((s) => (s.branding.coverImage = v), { settings: true }), { maxWidth: 1600, alpha: false }),
+      select("Deckblatt-Layout", [["bottom", "Bild unten"], ["page", "Wie Canva-Vorlage (Bild als Ebene)"]], b.coverLayout, (v) => set((s) => (s.branding.coverLayout = v))),
+      imageField("Grafik «Kosten vs. Bindung»", "Original-Grafik aus der Vorlage. Ohne Bild wird die Grafik gezeichnet.", b.chartImage, (v) => set((s) => (s.branding.chartImage = v), { settings: true }), { maxWidth: 1400, alpha: true }),
       imageField("Bild «Warum Auto-Abo»", "z. B. Auto mit Inklusivleistungen. Ohne Bild: Icons.", b.whyImage, (v) => set((s) => (s.branding.whyImage = v), { settings: true }), { maxWidth: 1400, alpha: false }),
       text("Referenzen im Fussband (mit Komma)", b.references.join(", "), (v) => set((s) => (s.branding.references = listToStrings(v))), { hint: "Nur wenn keine Referenz-Logos hochgeladen sind." }),
       h("div", { class: "field" },
@@ -1305,6 +1326,7 @@
       ...b.badges.map((badge, i) => h("div", { class: "row row-3" },
         select("Typ", badgeTypes, badge.type, (v) => set((s) => (s.branding.badges[i].type = v))),
         text("Text", badge.label, (v) => set((s) => (s.branding.badges[i].label = v))),
+        imageField("Bild (optional)", "ersetzt die gezeichnete Variante", badge.image || "", (v) => set((s) => (s.branding.badges[i].image = v), { settings: true }), { maxWidth: 800, alpha: true }),
         h("div", { class: "item-row" }, text("Wert", badge.value || "", (v) => set((s) => (s.branding.badges[i].value = v)), { hint: "nur Bewertung" }), h("span"), iconButton("Entfernen", "✕", () => set((s) => s.branding.badges.splice(i, 1), { settings: true }), "btn-danger")))),
       button("＋ Badge", () => set((s) => s.branding.badges.push({ type: "swiss", label: "", value: "" }), { settings: true }), "add-row btn-sm"),
     ];
@@ -1331,6 +1353,11 @@
       h("div", { class: "image-actions" },
         button("Einstellungen importieren", () => pickFile(importSettings), "btn-primary btn-sm"),
         button("Einstellungen exportieren", exportSettings, "btn-sm")),
+      h("h3", { text: "Design (Logo, Bilder, Badges)" }),
+      h("p", { class: "field-hint", text: "Ein Design-Paket ersetzt nur Logo, Bilder und Badges. Team, Katalog und Texte bleiben." }),
+      h("div", { class: "image-actions" },
+        button("Design importieren", () => pickFile(importSettings), "btn-sm"),
+        button("Design exportieren", exportDesign, "btn-sm")),
       h("h3", { text: "Entwürfe" }),
       h("div", { class: "image-actions" },
         button("Backup exportieren", exportDrafts, "btn-sm"),

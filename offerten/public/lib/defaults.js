@@ -501,6 +501,10 @@ globalThis.CarifyDefaults = (function () {
       branding: {
         logo: "",
         coverImage: "",
+        // "bottom": image below the text. "page": like the Canva template – the image is a layer
+        // over the page area below the logo row (794 × 916 px), the text sits on top of it.
+        coverLayout: "bottom",
+        chartImage: "",
         whyImage: "",
         references: [],
         referenceLogos: [],

@@ -356,3 +356,21 @@ test("normalizeDocument repairs partial drafts", () => {
   assert.equal(doc.offer.sections.cover, true);
   assert.throws(() => M.normalizeDocument({ type: "nope" }, s));
 });
+
+test("design package only changes the branding and keeps team, catalog and texts", () => {
+  const px = "data:image/png;base64,iVBORw0KGgo=";
+  const base = settingsWithTeam();
+  const pkg = { schema: "carify-offerten-design/1", branding: { coverLayout: "page", chartImage: px, badges: [{ type: "swiss", label: "Test", image: px }] }, team: [] };
+  assert.equal(M.isDesignPackage(pkg), true);
+  assert.equal(M.isDesignPackage({ schema: "carify-offerten/1" }), false);
+  const next = M.mergeDesign(base, pkg);
+  assert.equal(next.branding.coverLayout, "page");
+  assert.equal(next.branding.chartImage, px);
+  assert.equal(next.branding.badges[0].image, px);
+  assert.deepEqual(plain(next.team), plain(base.team));
+  assert.deepEqual(plain(next.texts), plain(base.texts));
+  assert.equal(base.branding.coverLayout, "bottom");
+  assert.throws(() => M.mergeDesign(base, { schema: "carify-offerten/1", branding: {} }), /Design-Paket/);
+  assert.equal(M.mergeSettings({ schema: "carify-offerten/1", branding: { coverLayout: "x" } }).branding.coverLayout, "bottom");
+  assert.equal(M.designPackage(next).schema, "carify-offerten-design/1");
+});
