@@ -30,18 +30,27 @@ globalThis.CarifyFormat = (function () {
     return Number(cleaned);
   }
 
+  // Group and decimal marks per language, fixed here: browsers ship different ICU data
+  // (older de-CH "1’230", newer "1'230"; fr-CH sometimes "1 230", sometimes "1'230").
+  const MARKS = { de: ["’", "."], fr: [NBSP, ","], en: ["’", "."] };
+
+  function grouped(n, lang, minDigits, maxDigits) {
+    const [group, dec] = MARKS[lang] || MARKS.de;
+    const nf = new Intl.NumberFormat("en-US", { minimumFractionDigits: minDigits, maximumFractionDigits: maxDigits });
+    // `n === 0` is also true for -0, which Intl would print as "-0".
+    return nf.format(n === 0 ? 0 : n).replace(/[,.]/g, (m) => (m === "," ? group : dec));
+  }
+
   function number(n, lang, decimals) {
     if (!isNum(n)) return "";
     const d = decimals ?? (Number.isInteger(n) ? 0 : 2);
-    const nf = new Intl.NumberFormat(locale(lang), { minimumFractionDigits: d, maximumFractionDigits: d });
-    // `n === 0` is also true for -0, which Intl would print as "-0".
-    return nf.format(n === 0 ? 0 : n).replace(/\u202f/g, NBSP);
+    return grouped(n, lang, d, d);
   }
 
   // 8.1 → "8.1", 8 → "8" (rates, no trailing zeros)
   function decimal(n, lang) {
     if (!isNum(n)) return "";
-    return new Intl.NumberFormat(locale(lang), { maximumFractionDigits: 2 }).format(n).replace(/\u202f/g, NBSP);
+    return grouped(n, lang, 0, 2);
   }
 
   // "CHF 1’230" (contract style) – decimals only when there are cents.

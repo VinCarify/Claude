@@ -179,7 +179,7 @@ globalThis.CarifyRender = (function () {
 
   // kind: cover | letter | why | prices | options | contract
   function pageShell(root, kind, ctx, opts) {
-    const page = h("section", { class: `doc-page doc-page--${kind}`, dataset: { kind } });
+    const page = h("section", { class: `doc-page doc-page--${kind}${ctx.density ? ` ${ctx.density}` : ""}`, dataset: { kind } });
     if (opts?.id) page.id = opts.id;
     const body = h("div", { class: "doc-body" });
     if (ctx.marketing) {
@@ -411,6 +411,7 @@ globalThis.CarifyRender = (function () {
     const head = {
       vehicle: t.colVehicle,
       term: t.colTerm,
+      plan: t.colPlan,
       km: t.colKm,
       priceExcl: t.colPriceExcl,
       priceIncl: t.colPriceIncl,
@@ -428,10 +429,12 @@ globalThis.CarifyRender = (function () {
     const cells = {
       vehicle: h("td", { class: "col-vehicle" },
         h("strong", { class: "veh-model" }, model),
-        vehicle.sub ? h("span", { class: "veh-sub", text: vehicle.sub }) : null),
+        vehicle.sub ? h("span", { class: "veh-sub", text: vehicle.sub }) : null,
+        vehicle.start ? h("span", { class: "veh-start", text: `${t.colStart}: ${vehicle.start}` }) : null),
       term: h("td", { class: "col-term" },
         h("span", { text: String(row.months) }),
         showNote ? h("span", { class: "term-note", text: `→ ${M.fill(t.insuranceNote, { betrag: F.number(row.insurance, lang) })}` }) : null),
+      plan: h("td", { class: "col-plan", text: row.plan || "" }),
       km: h("td", { class: "col-km" }, row.lines.map((l) => h("span", { text: F.number(l.km, lang) }))),
       priceExcl: h("td", { class: "col-price" }, row.lines.map((l) => h("span", { text: F.isNum(l.price) ? F.chfAfter(l.price, lang) : "–" }))),
       priceIncl: h("td", { class: "col-price" }, row.lines.map((l) => h("span", { text: F.isNum(l.priceIncl) ? F.chfAfter(l.priceIncl, lang) : "–" }))),
@@ -533,8 +536,7 @@ globalThis.CarifyRender = (function () {
         h("div", { class: "sign-col" },
           h("strong", { class: "sign-head", text: view.carify.name }),
           h("span", { class: "sign-meta", text: view.signDate }),
-          view.signatory ? h("span", { class: "sign-meta", text: view.signatory }) : null,
-          line(t.contractSignCarifyRole)),
+          view.signatory ? h("span", { class: "sign-meta", text: view.signatory }) : null),
         h("div", { class: "sign-col" },
           h("strong", { class: "sign-head", text: t.contractSignCustomer }),
           view.customer.name ? h("span", { class: "sign-meta", text: view.customer.name }) : null,
@@ -552,24 +554,49 @@ globalThis.CarifyRender = (function () {
     return blocks.flatMap((b) => (b.type === "p" ? b.lines.map((line) => ({ type: "p", lines: [line] })) : [b]));
   }
 
+  function vehicleTable(table) {
+    return h("table", { class: `contract-table cols-${table.columns.length}` },
+      h("thead", {}, h("tr", {}, table.columns.map((c) => h("th", { class: `ct-${c.key}`, scope: "col", text: c.label })))),
+      h("tbody", {}, table.rows.map((cells) => h("tr", {}, cells.map((text, i) => h("td", { class: `ct-${table.columns[i].key}`, text }))))));
+  }
+
+  // Contracts should fit on one page: if not, render again tighter (smaller type, less space).
+  const CONTRACT_DENSITY = ["", "is-compact", "is-dense"];
+
   function renderContract(root, doc, settings) {
+    let view;
+    for (const density of CONTRACT_DENSITY) {
+      root.replaceChildren();
+      view = buildContract(root, doc, settings, density);
+      if (root.querySelectorAll(".doc-page").length <= 1) break;
+    }
+    numberPages(root);
+    return view;
+  }
+
+  function buildContract(root, doc, settings, density) {
     const view = M.contractView(doc, settings);
     const t = view.t;
     const ctx = formalCtx(doc, settings, t);
+    ctx.density = density;
     const gridGroup = { id: "grid", make: () => h("dl", { class: "contract-grid" }) };
     const gridItem = (g) => h("div", { class: "grid-item" }, h("dt", { text: g.label }), h("dd", {}, g.lines.map((l) => h("span", { text: l || "–" }))));
     // Long fleets: the model list gets its own full-width block, one line per block.
     const [models, ...rest] = view.grid;
-    const longList = models.lines.length > 6;
+    const longList = !view.table && models.lines.length > 6;
     const modelGroup = { id: "models", make: () => h("div", { class: "contract-models" }) };
     const blocks = [
       { el: formalTitle(t.contractTitle, view.subtitle) },
       { el: partiesBox(view, t) },
       { el: h("p", { class: "contract-lead", text: view.intro }), keepWithNext: true },
-      ...(longList
-        ? [{ el: h("p", { class: "contract-models-label", text: models.label }), keepWithNext: true }, ...models.lines.map((l) => ({ el: h("span", { text: l }), group: modelGroup }))]
-        : [{ el: gridItem(models), group: gridGroup }]),
-      ...rest.map((g) => ({ el: gridItem(g), group: gridGroup })),
+      ...(view.table
+        ? [{ el: vehicleTable(view.table) }, ...view.grid.map((g) => ({ el: gridItem(g), group: gridGroup }))]
+        : [
+          ...(longList
+            ? [{ el: h("p", { class: "contract-models-label", text: models.label }), keepWithNext: true }, ...models.lines.map((l) => ({ el: h("span", { text: l }), group: modelGroup }))]
+            : [{ el: gridItem(models), group: gridGroup }]),
+          ...rest.map((g) => ({ el: gridItem(g), group: gridGroup })),
+        ]),
       { el: h("p", { class: "contract-small", text: t.contractReplacement }) },
       { el: h("h2", { class: "contract-h2", text: t.contractRateTitle }), keepWithNext: true },
       ...rich(splitLines(view.rateBlocks), "contract-text").map((el) => ({ el })),
@@ -577,7 +604,6 @@ globalThis.CarifyRender = (function () {
       { el: h("p", { class: "contract-footnote", text: t.contractFootnote }) },
     ];
     flow(blocks, pageFactory(root, "contract", ctx));
-    numberPages(root);
     return view;
   }
 

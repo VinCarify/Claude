@@ -14,6 +14,10 @@ globalThis.CarifyModel = (function () {
   const LANGS = ["de", "fr", "en"];
   const VAT_MODES = ["excl", "incl", "both"];
   const INSURANCE_DISPLAY = ["none", "column", "note"];
+  // Abo-Typ per price row / contract vehicle: fixed term or flexible
+  const PLANS = ["Fix", "Flex"];
+  const plan = (v) => PLANS.find((p) => p.toLowerCase() === str(v).trim().toLowerCase()) || "";
+  const isoDate = (v) => (F.parseIsoDate(str(v)) ? str(v) : "");
 
   const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
   const str = (v) => (typeof v === "string" ? v : v == null ? "" : String(v));
@@ -135,7 +139,8 @@ globalThis.CarifyModel = (function () {
       gearbox: "",
       link: "",
       kms: useKms.slice(),
-      rows: useTerms.map((months) => ({ months, prices: emptyPrices(useKms), insurance: null })),
+      rows: useTerms.map((months) => ({ months, prices: emptyPrices(useKms), insurance: null, plan: "" })),
+      start: "",
     };
   }
 
@@ -148,7 +153,7 @@ globalThis.CarifyModel = (function () {
         prices[km] = F.isNum(p) ? p : F.parseNumber(str(p));
       }
       const insurance = F.isNum(r.insurance) ? r.insurance : F.parseNumber(str(r.insurance));
-      return { months: Number(r.months) || 0, prices, insurance };
+      return { months: Number(r.months) || 0, prices, insurance, plan: plan(r.plan) };
     });
     return {
       id: str(v.id) || uid("veh"),
@@ -160,7 +165,18 @@ globalThis.CarifyModel = (function () {
       kms,
       rows,
       stand: str(v.stand),
+      start: isoDate(v.start),
     };
+  }
+
+  // Catalog order for pickers: alphabetical by model (then year), German collation, "A4" before "A10".
+  function compareVehicles(a, b) {
+    return str(a.model).trim().localeCompare(str(b.model).trim(), "de", { sensitivity: "base", numeric: true }) ||
+      str(a.year).localeCompare(str(b.year), "de", { numeric: true });
+  }
+
+  function sortedCatalog(catalog) {
+    return (catalog || []).map((v, index) => ({ v, index })).sort((x, y) => compareVehicles(x.v, y.v) || x.index - y.index);
   }
 
   // One line per model group ("2x MARKE Modell …"). Start, km package, term, insurance and package type
@@ -172,6 +188,8 @@ globalThis.CarifyModel = (function () {
       model: "",
       rate: null,
       extraKmRate: settings.defaults.extraKmRate,
+      start: "",
+      plan: "",
     };
   }
 
@@ -186,6 +204,8 @@ globalThis.CarifyModel = (function () {
       createdAt: today,
       updatedAt: "",
       date: today,
+      // Offers follow today's date until the date is set by hand.
+      dateAuto: type === "offer",
       customer: { company: "", street: "", zip: "", city: "", country: "CH" },
       contact: { salutation: "", firstName: "", lastName: "", email: "" },
       ownerId: settings.team[0]?.id || "",
@@ -247,6 +267,8 @@ globalThis.CarifyModel = (function () {
           model: str(it.model),
           rate: F.isNum(it.rate) ? it.rate : F.parseNumber(str(it.rate)),
           extraKmRate: F.isNum(it.extraKmRate) ? it.extraKmRate : F.parseNumber(str(it.extraKmRate)),
+          start: isoDate(it.start),
+          plan: plan(it.plan),
         }));
       if (doc.contract.vatMode !== "incl") doc.contract.vatMode = "excl";
       if (!CONTRACT_KINDS.includes(doc.contract.kind)) doc.contract.kind = "new";
@@ -260,7 +282,15 @@ globalThis.CarifyModel = (function () {
     copy.date = todayIso || F.toIsoDate(new Date());
     copy.createdAt = copy.date;
     copy.updatedAt = "";
+    if (copy.type === "offer") copy.dateAuto = true;
     return copy;
+  }
+
+  // Offers with dateAuto keep today's date. Returns true when the date was changed.
+  function refreshDate(doc, todayIso) {
+    if (!doc.dateAuto || !todayIso || doc.date === todayIso) return false;
+    doc.date = todayIso;
+    return true;
   }
 
   // ---------------------------------------------------------------------------
@@ -275,7 +305,7 @@ globalThis.CarifyModel = (function () {
         for (const km of v.kms) {
           const price = row.prices[km];
           if (F.isNum(price)) {
-            out.push({ key: `${v.id}|${row.months}|${km}`, vehicleId: v.id, model: v.model, months: row.months, km, price, insurance: row.insurance });
+            out.push({ key: `${v.id}|${row.months}|${km}`, vehicleId: v.id, model: v.model, months: row.months, km, price, insurance: row.insurance, plan: row.plan || "", start: v.start || "" });
           }
         }
       }
@@ -306,8 +336,16 @@ globalThis.CarifyModel = (function () {
         const extras = [vehicle?.fuel, vehicle?.gearbox].map((x) => str(x).trim()).filter(Boolean).join(" & ");
         item.model = [o.model, extras].filter(Boolean).join(" - ");
         item.rate = toContract(o.price);
+        item.plan = o.plan;
+        item.start = o.start;
         return item;
       });
+      // One shared start when all vehicles start together, otherwise one per vehicle.
+      const starts = [...new Set(c.items.map((it) => it.start))];
+      if (starts.length === 1) {
+        c.start = starts[0];
+        c.items.forEach((it) => (it.start = ""));
+      }
       doc.contractMismatch = picked.some((o) => o.km !== c.km || o.months !== c.months || (o.insurance ?? null) !== (picked[0].insurance ?? null));
     }
     return doc;
@@ -408,8 +446,31 @@ globalThis.CarifyModel = (function () {
       .sort((a, b) => a.months - b.months);
   }
 
+  // Exact to the cent: excl × 1.081 = incl, incl ÷ 1.081 = excl (rate 8.1 %).
+  const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
   function vatIncl(price, rate) {
-    return F.isNum(price) ? Math.round(price * (1 + rate / 100)) : null;
+    return F.isNum(price) ? round2(price * (1 + rate / 100)) : null;
+  }
+
+  function vatExcl(price, rate) {
+    return F.isNum(price) ? round2(price / (1 + rate / 100)) : null;
+  }
+
+  // Switching a contract between "exkl." and "inkl." converts every amount, so the prices stay the same.
+  function setContractVat(doc, mode, rate) {
+    const c = doc.contract;
+    const next = mode === "incl" ? "incl" : "excl";
+    if (!c || c.vatMode === next) return;
+    const conv = (n) => (next === "incl" ? vatIncl(n, rate) : vatExcl(n, rate));
+    for (const it of c.items) {
+      it.rate = conv(it.rate);
+      it.extraKmRate = conv(it.extraKmRate);
+    }
+    c.insuranceSurcharge = conv(c.insuranceSurcharge);
+    c.packageSurcharge = conv(c.packageSurcharge);
+    c.downPayment = conv(c.downPayment);
+    c.vatMode = next;
   }
 
   function offerView(doc, settings) {
@@ -421,9 +482,11 @@ globalThis.CarifyModel = (function () {
         id: v.id,
         model: v.model.trim(),
         sub: [v.year, v.fuel, v.gearbox].map((s) => str(s).trim()).filter(Boolean).join(" - "),
+        start: v.start ? F.date(v.start) : "",
         link: /^https:\/\//i.test(v.link.trim()) ? v.link.trim() : "",
         rows: pricedRows(v, o.hideEmptyRows).map((r) => ({
           months: r.months,
+          plan: r.plan || "",
           // surcharges are entered excl. VAT like the prices; "incl" shows every amount incl. VAT
           insurance: F.isNum(r.insurance) ? (o.vatMode === "incl" ? vatIncl(r.insurance, rate) : r.insurance) : null,
           lines: v.kms.map((km) => ({ km, price: r.prices[km], priceIncl: vatIncl(r.prices[km], rate) })),
@@ -431,7 +494,9 @@ globalThis.CarifyModel = (function () {
       }))
       .filter((v) => v.model || v.rows.length);
 
-    const columns = ["vehicle", "term", "km"];
+    const columns = ["vehicle", "term"];
+    if (vehicles.some((v) => v.rows.some((r) => r.plan))) columns.push("plan");
+    columns.push("km");
     if (o.vatMode === "excl" || o.vatMode === "both") columns.push("priceExcl");
     if (o.vatMode === "incl" || o.vatMode === "both") columns.push("priceIncl");
     if (o.insuranceDisplay === "column" && vehicles.some((v) => v.rows.some((r) => r.insurance != null))) columns.push("insurance");
@@ -484,9 +549,10 @@ globalThis.CarifyModel = (function () {
   // Contract view
   // ---------------------------------------------------------------------------
 
-  function startText(c, lang) {
-    if (!c.start) return "";
-    return c.startMonthOnly ? F.monthYear(c.start, lang) : F.date(c.start);
+  function startText(c, lang, iso) {
+    const value = iso === undefined ? c.start : iso;
+    if (!value) return "";
+    return c.startMonthOnly ? F.monthYear(value, lang) : F.date(value);
   }
 
   // "A", "A und B", "A, B und C"
@@ -505,8 +571,12 @@ globalThis.CarifyModel = (function () {
         model: str(it.model).trim(),
         rate: F.isNum(it.rate) ? it.rate : null,
         extraKmRate: F.isNum(it.extraKmRate) ? it.extraKmRate : null,
+        start: isoDate(it.start) || isoDate(c.start),
+        plan: plan(it.plan),
       }))
       .filter((it) => it.model || it.rate != null);
+    // Several models: one compact table row per model (start, Fix/Flex, rate, extra km).
+    const tableMode = items.length > 1;
     const vehicleCount = items.reduce((n, it) => n + it.qty, 0);
     const labelled = (it) => (vehicleCount > 1 ? `${it.qty}x ${it.model}` : it.model);
     const kind = CONTRACT_KINDS.includes(c.kind) ? c.kind : "new";
@@ -524,6 +594,7 @@ globalThis.CarifyModel = (function () {
     if (rates.length === 0) vars.aborate_satz = "";
     else if (vehicleCount === 1) vars.aborate_satz = fill(t.contractRateOne, { ...vars, betrag: F.chf(rates[0].rate, lang) });
     else if (sameRate) vars.aborate_satz = fill(t.contractRateEach, { ...vars, betrag: F.chf(rates[0].rate, lang) });
+    else if (tableMode) vars.aborate_satz = fill(t.contractRateTable, vars);
     else {
       const list = rates.map((it) => fill(t.contractRateFor, { betrag: F.chf(it.rate, lang), modell: it.model }));
       vars.aborate_satz = fill(t.contractRateGroups, { ...vars, liste: joinList(list, t.listAnd) });
@@ -541,6 +612,7 @@ globalThis.CarifyModel = (function () {
     const sameKm = kmRates.length > 0 && kmRates.every((it) => it.extraKmRate === kmRates[0].extraKmRate);
     if (kmRates.length === 0) vars.mehrkm_satz = "";
     else if (sameKm) vars.mehrkm_satz = fill(t.contractExtraKmOne, { ...vars, betrag: F.chf2(kmRates[0].extraKmRate, lang) });
+    else if (tableMode) vars.mehrkm_satz = fill(t.contractExtraKmTable, vars);
     else {
       const list = kmRates.map((it) => fill(t.contractRateFor, { betrag: F.chf2(it.extraKmRate, lang), modell: it.model }));
       vars.mehrkm_satz = fill(t.contractExtraKmGroups, { ...vars, liste: joinList(list, t.listAnd) });
@@ -550,15 +622,35 @@ globalThis.CarifyModel = (function () {
     const subtitle =
       kind === "takeover" ? t.contractTakeoverSubtitle : number ? `${t.contractNumberLabel} ${number}${kind === "adjustment" ? t.contractAdjustmentSuffix : ""}` : "";
     const startLabel = { new: t.contractFieldStart, adjustment: t.contractFieldStartAdjustment, takeover: t.contractFieldStartTakeover }[kind];
+    const single = items[0];
     const grid = [
-      { label: t.contractFieldModel, lines: items.map(labelled) },
-      { label: startLabel, lines: [startText(c, lang)] },
+      ...(tableMode ? [] : [
+        { label: t.contractFieldModel, lines: items.map(labelled) },
+        { label: startLabel, lines: [startText(c, lang, single ? single.start : isoDate(c.start))] },
+      ]),
+      ...(str(c.vehicleIds).trim() ? [{ label: t.contractFieldVehicleId, lines: [str(c.vehicleIds).trim()] }] : []),
       { label: t.contractFieldKm, lines: [F.isNum(c.km) ? `${each}${F.number(c.km, lang)}` : str(c.km)] },
       { label: t.contractFieldTerm, lines: [F.isNum(c.months) ? String(c.months) : str(c.months)] },
+      ...(!tableMode && single?.plan ? [{ label: t.contractFieldPlan, lines: [single.plan] }] : []),
       { label: t.contractFieldInsurance, lines: [surcharge(c.insurance, c.insuranceSurcharge)] },
       { label: t.contractFieldPackage, lines: [surcharge(c.packageType, c.packageSurcharge)] },
     ];
-    if (str(c.vehicleIds).trim()) grid.splice(2, 0, { label: t.contractFieldVehicleId, lines: [str(c.vehicleIds).trim()] });
+
+    let table = null;
+    if (tableMode) {
+      const cols = [
+        { key: "qty", label: t.contractColQty, cell: (it) => String(it.qty) },
+        { key: "model", label: t.contractFieldModel, cell: (it) => it.model },
+        { key: "start", label: startLabel, cell: (it) => startText(c, lang, it.start), when: items.some((it) => it.start) },
+        { key: "plan", label: t.contractFieldPlan, cell: (it) => it.plan, when: items.some((it) => it.plan) },
+        { key: "rate", label: `${t.contractColRate} (${vars.mwst})`, cell: (it) => F.chf(it.rate, lang), when: rates.length > 0 },
+        { key: "extraKm", label: t.contractColExtraKm, cell: (it) => F.chf2(it.extraKmRate, lang), when: kmRates.length > 0 },
+      ].filter((col) => col.when !== false);
+      table = {
+        columns: cols.map(({ key, label }) => ({ key, label })),
+        rows: items.map((it) => cols.map((col) => col.cell(it) || "–")),
+      };
+    }
     return {
       t,
       vars,
@@ -568,6 +660,7 @@ globalThis.CarifyModel = (function () {
       intro: { new: t.contractVehiclesIntro, adjustment: t.contractVehiclesIntroAdjustment, takeover: t.contractVehiclesIntroTakeover }[kind],
       models: items.map(labelled),
       grid,
+      table,
       vehicleCount,
       rateBlocks: richText(t.contractRateText, vars),
       carify: {
@@ -640,7 +733,7 @@ globalThis.CarifyModel = (function () {
       if (F.isNum(c.packageSurcharge)) need(str(c.packageType).trim(), "contract.packageType", "Package Type fehlt (wegen Package-Aufpreis).");
       need(doc.customer.street.trim() && doc.customer.zip.trim() && doc.customer.city.trim(), "customer.address", "Anschrift des Kunden unvollständig.");
       need(settings.company.street && settings.company.city, "settings.company", "CARIFY-Anschrift fehlt (Einstellungen → Firma).");
-      need(c.start, "contract.start", "Geplanter Abobeginn fehlt.");
+      need(c.start || (c.items.length > 0 && c.items.every((it) => it.start)), "contract.start", "Geplanter Abobeginn fehlt.");
       need(F.isNum(c.km) || str(c.km).trim(), "contract.km", "Kilometer-Package fehlt.");
       need(F.isNum(c.months) || str(c.months).trim(), "contract.months", "Mindestlaufzeit fehlt.");
       need(c.items.length > 0, "items", "Mindestens ein Fahrzeug erfassen.");
@@ -660,7 +753,14 @@ globalThis.CarifyModel = (function () {
     LANGS,
     uid,
     clone,
+    PLANS,
     mergeSettings,
+    compareVehicles,
+    sortedCatalog,
+    refreshDate,
+    vatIncl,
+    vatExcl,
+    setContractVat,
     isDesignPackage,
     mergeDesign,
     designPackage,
