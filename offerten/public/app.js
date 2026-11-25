@@ -174,6 +174,7 @@
     const doc = state.docs.find((d) => d.id === id);
     if (!doc) return;
     state.doc = doc;
+    if (M.refreshDate(doc, today())) scheduleSave();
     store.set(KEYS.current, id);
     renderEditor();
     schedulePreview(0);
@@ -362,6 +363,12 @@
     return h("div", { class: "field", dataset: { field: opts?.field || "" } }, h("span", { class: "field-label", text: label }), group, opts?.hint ? h("span", { class: "field-hint", text: opts.hint }) : null);
   }
 
+  function checkboxWithId(id, label, checked, onChange) {
+    const box = checkbox(label, checked, onChange);
+    box.querySelector("input").id = id;
+    return box;
+  }
+
   function checkbox(label, checked, onChange) {
     const input = h("input", { type: "checkbox", checked: !!checked });
     input.addEventListener("change", () => onChange(input.checked));
@@ -539,7 +546,17 @@
       section("Kunde", customerFields(doc, { contactFirst: true, addressHint: "Adresse ist optional, erscheint im Briefkopf." }), { id: "sec-customer" }),
       section("Offerte", [
         h("div", { class: "row" },
-          dateField("Datum", doc.date, (v) => update((d) => (d.date = v)), { field: "date" }),
+          h("div", { class: "field-stack" },
+            dateField("Datum", doc.date, (v) => update((d) => {
+              d.date = v;
+              d.dateAuto = false;
+              const auto = $("#date-auto");
+              if (auto) auto.checked = false;
+            }), { field: "date" }),
+            checkboxWithId("date-auto", "Immer heutiges Datum", doc.dateAuto, (v) => update((d) => {
+              d.dateAuto = v;
+              if (v) d.date = today();
+            }, { structural: true }))),
           number("Gültig (Tage)", o.validityDays, (v) => update((d) => (d.offer.validityDays = v ?? 0)), { hint: " ", hintId: "validity-hint" })),
         select("Ansprechpartner/in", teamOptions(doc), doc.ownerId, (v) => update((d) => (d.ownerId = v)), { field: "ownerId" }),
         segmented("Sprache", LANG_OPTIONS, doc.lang, (v) => update((d) => (d.lang = v), { structural: true })),
@@ -572,7 +589,7 @@
       // Choosing only selects; the button adds. Arrow keys on a closed select fire "change".
       const sel = h("select", { class: "input", id: "catalog-select" },
         h("option", { value: "", text: `Fahrzeug wählen (${catalog.length}) …` }),
-        catalog.map((v) => h("option", { value: v.id, text: [v.model, v.year, v.stand ? `Stand ${v.stand}` : ""].filter(Boolean).join(" · ") })));
+        M.sortedCatalog(catalog).map(({ v }) => h("option", { value: v.id, text: [v.model, v.year, v.stand ? `Stand ${v.stand}` : ""].filter(Boolean).join(" · ") })));
       const add = button("Hinzufügen", () => {
         const item = catalog.find((v) => v.id === sel.value);
         if (!item) {
@@ -618,6 +635,7 @@
     updateSettings((s) => {
       const copy = M.normalizeVehicle(M.clone(vehicle));
       copy.stand = F.date(today());
+      copy.start = "";
       const idx = s.catalog.findIndex((c) => c.model.trim().toLowerCase() === vehicle.model.trim().toLowerCase() && c.year === vehicle.year);
       if (idx >= 0) {
         copy.id = s.catalog[idx].id;
@@ -693,6 +711,9 @@
         text("Jahrgang", v.year, (val) => change((veh) => (veh.year = val)), { attrs: { placeholder: "z. B. 2026" } }),
         withList(text("Treibstoff", v.fuel, (val) => change((veh) => (veh.fuel = val))), FUELS),
         withList(text("Getriebe", v.gearbox, (val) => change((veh) => (veh.gearbox = val))), GEARBOXES)),
+      fieldPrefix.startsWith("vehicles.")
+        ? dateField("Abobeginn (optional)", v.start, (val) => change((veh) => (veh.start = val)), { hint: "Wenn Fahrzeuge zu unterschiedlichen Zeitpunkten starten – erscheint beim Fahrzeug." })
+        : null,
       text("Link zum Fahrzeug (optional)", v.link, (val) => change((veh) => (veh.link = val)), { field: `${fieldPrefix}.link`, attrs: { type: "url", placeholder: "https://…" }, hint: "Im PDF klickbar." }),
       h("div", { class: "field" },
         h("span", { class: "field-label", text: "KM-Pakete pro Monat" }),
@@ -701,6 +722,13 @@
         h("span", { class: "field-label", text: "Mindestlaufzeiten (Monate)" }),
         h("div", { class: "chips" }, termOptions.map((m) => chip(String(m), v.rows.some((r) => r.months === m), () => toggleTerm(m), `term.${m}`)), addCustom("+ Mte", (m) => !v.rows.some((r) => r.months === m) && toggleTerm(m)))),
       priceGrid(v, change, fieldPrefix));
+  }
+
+  function planSelect(value, onChange, label) {
+    const sel = h("select", { class: "input input-plan", "aria-label": label },
+      [["", "–"], ...M.PLANS.map((p) => [p, p])].map(([v, l]) => h("option", { value: v, text: l, selected: v === (value || "") })));
+    sel.addEventListener("change", () => onChange(sel.value));
+    return sel;
   }
 
   function priceGrid(v, change, fieldPrefix) {
@@ -713,7 +741,8 @@
       h("thead", {}, h("tr", {},
         h("th", { scope: "col", text: "Mte \\ km" }),
         v.kms.map((km) => h("th", { scope: "col", text: F.number(km) })),
-        h("th", { scope: "col", class: "col-ins", text: "Vers. +", title: "Versicherungs-Aufpreis pro Monat (optional)" }))),
+        h("th", { scope: "col", class: "col-ins", text: "Vers. +", title: "Versicherungs-Aufpreis pro Monat (optional)" }),
+        h("th", { scope: "col", class: "col-plan", text: "Fix/Flex", title: "Abo-Typ (optional) – erscheint als Spalte" }))),
       h("tbody", {}, v.rows.map((row, r) => h("tr", {},
         h("th", { scope: "row", text: String(row.months) }),
         v.kms.map((km, c) => {
@@ -721,7 +750,8 @@
           inputs.push({ input, r, c });
           return h("td", {}, input);
         }),
-        h("td", { class: "col-ins" }, numberInput(row.insurance, (val) => change((veh) => (veh.rows[r].insurance = val)), { "aria-label": `${row.months} Monate, Versicherungs-Aufpreis` }))))));
+        h("td", { class: "col-ins" }, numberInput(row.insurance, (val) => change((veh) => (veh.rows[r].insurance = val)), { "aria-label": `${row.months} Monate, Versicherungs-Aufpreis` })),
+        h("td", { class: "col-plan" }, planSelect(row.plan, (val) => change((veh) => (veh.rows[r].plan = val)), `${row.months} Monate, Fix oder Flex`))))));
 
     // Paste a block from Excel / Google Sheets: tabs = columns, new lines = rows.
     for (const { input, r, c } of inputs) {
@@ -780,7 +810,9 @@
         h("div", { class: "row" },
           withList(text("Package Type", c.packageType, (v) => update((x) => (x.contract.packageType = v)), { field: "contract.packageType" }), d.packageTypes),
           number("Package-Aufpreis (CHF/Monat)", c.packageSurcharge, (v) => update((x) => (x.contract.packageSurcharge = v)))),
-        segmented("Preise", [["excl", "exkl. MwSt"], ["incl", "inkl. MwSt"]], c.vatMode, (v) => update((x) => (x.contract.vatMode = v))),
+        segmented("Preise", [["excl", "exkl. MwSt"], ["incl", "inkl. MwSt"]], c.vatMode, (v) => update((x) => M.setContractVat(x, v, Number(d.vatRate) || 0), { structural: true }), {
+          hint: `Beim Umschalten rechnet die App alle Beträge um (× bzw. ÷ ${F.decimal(1 + (Number(d.vatRate) || 0) / 100)}).`,
+        }),
         h("div", { class: "row" },
           numberOrText("Kündigungsfrist (Tage)", c.noticePeriod, (v) => update((x) => (x.contract.noticePeriod = v)), { hint: "Zahl = Tage, wird übersetzt" }),
           number("Anzahlung (CHF, optional)", c.downPayment, (v) => update((x) => (x.contract.downPayment = v)))),
@@ -802,7 +834,10 @@
         h("span")),
       h("div", { class: "row" },
         number("Aborate je Fahrzeug (CHF/Monat)", it.rate, (v) => update((x) => (x.contract.items[i].rate = v)), { field: `items.${i}.rate` }),
-        number("Mehrkilometer (CHF/km)", it.extraKmRate, (v) => update((x) => (x.contract.items[i].extraKmRate = v)), { field: `items.${i}.extraKmRate`, attrs: { placeholder: "0.50" } }))));
+        number("Mehrkilometer (CHF/km)", it.extraKmRate, (v) => update((x) => (x.contract.items[i].extraKmRate = v)), { field: `items.${i}.extraKmRate`, attrs: { placeholder: "0.50" } })),
+      h("div", { class: "row" },
+        dateField("Abobeginn (falls abweichend)", it.start, (v) => update((x) => (x.contract.items[i].start = v)), { hint: "Leer = wie oben." }),
+        field("Fix / Flex", planSelect(it.plan, (v) => update((x) => (x.contract.items[i].plan = v)), "Fix oder Flex")))));
     return [
       ...rows,
       h("p", { class: "field-hint", text: "Ein Eintrag pro Modell. Gleiche Modelle mit «Anzahl» zusammenfassen (erscheint als «2x …»)." }),
@@ -1334,10 +1369,9 @@
 
   function settingsCatalog() {
     const catalog = state.settings.catalog;
-    const cards = catalog.map((v, i) => vehicleCard(v, i, catalog.length, (fn, opts) => set((s) => fn(s.catalog[i], s), opts?.structural ? { settings: true } : undefined), {
+    // Shown alphabetically; i is the position in the stored list.
+    const cards = M.sortedCatalog(catalog).map(({ v, index: i }, pos) => vehicleCard(v, pos, catalog.length, (fn, opts) => set((s) => fn(s.catalog[i], s), opts?.structural ? { settings: true } : undefined), {
       remove: () => set((s) => s.catalog.splice(i, 1), { settings: true, editor: true }),
-      up: () => set((s) => move(s.catalog, i, -1), { settings: true }),
-      down: () => set((s) => move(s.catalog, i, 1), { settings: true }),
     }, `catalog.${i}`));
     return [
       h("p", { class: "lead", text: "Fahrzeuge mit Preisen für die schnelle Auswahl in Offerten. Tipp: In einer Offerte beim Fahrzeug auf ☆ klicken, um es hier zu speichern." }),
@@ -1490,6 +1524,7 @@
     }
     const current = store.get(KEYS.current, "");
     state.doc = state.docs.find((d) => d.id === current) || state.docs[0];
+    if (M.refreshDate(state.doc, today())) store.set(KEYS.docs, state.docs);
     bind();
     setView("edit");
     updateBanner();

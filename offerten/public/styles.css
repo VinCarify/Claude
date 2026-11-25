@@ -910,6 +910,21 @@ select.input {
   background: var(--surface-2);
 }
 
+.price-grid .input-plan {
+  min-width: 72px;
+  text-align: left;
+}
+
+.field-stack {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.field-stack .field {
+  margin: 0;
+}
+
 .items {
   display: grid;
   gap: 8px;
