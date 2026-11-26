@@ -83,7 +83,8 @@ globalThis.CarifyDefaults = (function () {
     colInsurance: "Insurance Upgrade",
     colPlan: "Fix / Flex",
     colStart: "Abobeginn",
-    insuranceNote: "Versicherung + {{betrag}}",
+    insuranceUpgradeNote: "Versicherungs-Upgrade + {{betrag}} CHF",
+    insuranceUpgradeTerm: "Versicherungs-Upgrade + {{betrag}} CHF ({{monate}} Mte)",
     privateSurchargeNote: "Bei einer Privatbuchung kommt ein Zuschlag von {{betrag}} pro Monat dazu.",
     validityNote:
       "Diese {{indikativ}}Offerte ist {{gueltig_tage}} Tage gültig (bis {{gueltig_bis}}). {{mwst_hinweis}}\n" +
@@ -245,7 +246,8 @@ globalThis.CarifyDefaults = (function () {
     colInsurance: "Upgrade assurance",
     colPlan: "Fix / Flex",
     colStart: "Début",
-    insuranceNote: "Assurance + {{betrag}}",
+    insuranceUpgradeNote: "Upgrade assurance + {{betrag}} CHF",
+    insuranceUpgradeTerm: "Upgrade assurance + {{betrag}} CHF ({{monate}} mois)",
     privateSurchargeNote: "Pour une réservation privée, un supplément de {{betrag}} par mois s’ajoute.",
     validityNote:
       "Cette offre {{indikativ}}est valable {{gueltig_tage}} jours (jusqu’au {{gueltig_bis}}). {{mwst_hinweis}}\n" +
@@ -402,7 +404,8 @@ globalThis.CarifyDefaults = (function () {
     colInsurance: "Insurance upgrade",
     colPlan: "Fix / Flex",
     colStart: "Start",
-    insuranceNote: "Insurance + {{betrag}}",
+    insuranceUpgradeNote: "Insurance upgrade + {{betrag}} CHF",
+    insuranceUpgradeTerm: "Insurance upgrade + {{betrag}} CHF ({{monate}} mo.)",
     privateSurchargeNote: "For a private booking, a surcharge of {{betrag}} per month applies.",
     validityNote:
       "This {{indikativ}}offer is valid for {{gueltig_tage}} days (until {{gueltig_bis}}). {{mwst_hinweis}}\n" +

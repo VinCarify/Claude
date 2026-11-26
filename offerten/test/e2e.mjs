@@ -250,7 +250,7 @@ async function desktopFlow(browser, url) {
   await settle(page);
   text = await previewText(page);
   assert.ok(text.includes("Preis inkl. MwSt."), "incl. VAT column");
-  assert.ok(text.includes(norm("745.89 CHF")), "incl. VAT computed (690 × 1.081)");
+  assert.ok(text.includes(norm("746 CHF")), "incl. VAT computed (690 × 1.081, rounded up)");
   assert.ok(text.includes("Insurance Upgrade"), "insurance column");
 
   // Optional options page
