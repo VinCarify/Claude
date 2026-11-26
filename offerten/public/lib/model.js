@@ -336,6 +336,7 @@ globalThis.CarifyModel = (function () {
         const extras = [vehicle?.fuel, vehicle?.gearbox].map((x) => str(x).trim()).filter(Boolean).join(" & ");
         item.model = [o.model, extras].filter(Boolean).join(" - ");
         item.rate = toContract(o.price);
+        if (offer.offer.vatMode === "incl") item.extraKmRate = kmIncl(item.extraKmRate, vatRate);
         item.plan = o.plan;
         item.start = o.start;
         return item;
@@ -446,16 +447,27 @@ globalThis.CarifyModel = (function () {
       .sort((a, b) => a.months - b.months);
   }
 
-  // Exact to the cent: excl × 1.081 = incl, incl ÷ 1.081 = excl (rate 8.1 %).
   const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+  // Monthly amounts incl. VAT: excl × 1.081, rounded up to whole francs (no decimals on the documents).
+  const ceilChf = (n) => Math.ceil(round2(n) - 1e-9);
 
   function vatIncl(price, rate) {
-    return F.isNum(price) ? round2(price * (1 + rate / 100)) : null;
+    return F.isNum(price) ? ceilChf(price * (1 + rate / 100)) : null;
   }
 
+  // Back from incl to excl: the whole amount that gives this incl amount (so 691 → 747 → 691),
+  // otherwise exact to the cent (amounts typed in incl. VAT).
   function vatExcl(price, rate) {
-    return F.isNum(price) ? round2(price / (1 + rate / 100)) : null;
+    if (!F.isNum(price)) return null;
+    const exact = price / (1 + rate / 100);
+    const whole = Math.floor(exact + 1e-9);
+    for (const n of [whole, whole + 1]) if (vatIncl(n, rate) === price) return n;
+    return round2(exact);
   }
+
+  // Per-km tariffs stay exact to the cent (0.50 → 0.54).
+  const kmIncl = (n, rate) => (F.isNum(n) ? round2(n * (1 + rate / 100)) : null);
+  const kmExcl = (n, rate) => (F.isNum(n) ? round2(n / (1 + rate / 100)) : null);
 
   // Switching a contract between "exkl." and "inkl." converts every amount, so the prices stay the same.
   function setContractVat(doc, mode, rate) {
@@ -463,9 +475,10 @@ globalThis.CarifyModel = (function () {
     const next = mode === "incl" ? "incl" : "excl";
     if (!c || c.vatMode === next) return;
     const conv = (n) => (next === "incl" ? vatIncl(n, rate) : vatExcl(n, rate));
+    const convKm = (n) => (next === "incl" ? kmIncl(n, rate) : kmExcl(n, rate));
     for (const it of c.items) {
       it.rate = conv(it.rate);
-      it.extraKmRate = conv(it.extraKmRate);
+      it.extraKmRate = convKm(it.extraKmRate);
     }
     c.insuranceSurcharge = conv(c.insuranceSurcharge);
     c.packageSurcharge = conv(c.packageSurcharge);
@@ -493,6 +506,17 @@ globalThis.CarifyModel = (function () {
         })),
       }))
       .filter((v) => v.model || v.rows.length);
+
+    // "Versicherungs-Upgrade + 50" under the model: one line if all terms cost the same, else one per term.
+    for (const v of vehicles) {
+      const priced = v.rows.filter((r) => r.insurance != null);
+      const same = priced.length === v.rows.length && priced.every((r) => r.insurance === priced[0]?.insurance);
+      // amounts never wrap: "+ 55 CHF" stays together
+      const keep = (text) => text.replace(/\+ /g, `+${F.NBSP}`).replace(/ (CHF)/g, `${F.NBSP}$1`);
+      v.insuranceNotes = (!priced.length ? []
+        : same ? [fill(t.insuranceUpgradeNote, { betrag: F.number(priced[0].insurance, doc.lang) })]
+          : priced.map((r) => fill(t.insuranceUpgradeTerm, { betrag: F.number(r.insurance, doc.lang), monate: String(r.months) }))).map(keep);
+    }
 
     const columns = ["vehicle", "term"];
     if (vehicles.some((v) => v.rows.some((r) => r.plan))) columns.push("plan");

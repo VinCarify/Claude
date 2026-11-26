@@ -123,7 +123,7 @@ test("offerView hides unpriced terms, sorts them and computes VAT", () => {
   const view = M.offerView(doc, s);
   const rows = view.vehicles[0].rows;
   assert.deepEqual(plain(rows.map((r) => r.months)), [3, 12]);
-  assert.equal(rows[1].lines[0].priceIncl, 745.89); // 690 × 1.081, exact to the cent
+  assert.equal(rows[1].lines[0].priceIncl, 746); // 690 × 1.081 = 745.89, rounded up
   assert.deepEqual(plain(view.columns), ["vehicle", "term", "km", "priceExcl", "priceIncl"]);
   assert.equal(view.vehicles[0].sub, "2026 - Benzin - Automatik");
   assert.equal(view.vars.zum_fahrzeug, "zum gewünschten Fahrzeug");
@@ -232,17 +232,35 @@ test("contract VAT switch converts all amounts exactly and back", () => {
   Object.assign(doc.contract.items[0], { model: "A", rate: 691, extraKmRate: 0.5 });
   M.setContractVat(doc, "incl", 8.1);
   assert.equal(doc.contract.vatMode, "incl");
-  assert.equal(doc.contract.items[0].rate, 746.97); // 691 × 1.081
-  assert.equal(doc.contract.items[0].extraKmRate, 0.54);
-  assert.equal(doc.contract.insuranceSurcharge, 32.43);
+  assert.equal(doc.contract.items[0].rate, 747); // 691 × 1.081 = 746.97, rounded up
+  assert.equal(doc.contract.items[0].extraKmRate, 0.54); // per km stays exact
+  assert.equal(doc.contract.insuranceSurcharge, 33);
   assert.equal(doc.contract.downPayment, 5405);
   M.setContractVat(doc, "incl", 8.1); // no double conversion
-  assert.equal(doc.contract.items[0].rate, 746.97);
+  assert.equal(doc.contract.items[0].rate, 747);
   M.setContractVat(doc, "excl", 8.1);
   assert.equal(doc.contract.items[0].rate, 691);
   assert.equal(doc.contract.insuranceSurcharge, 30);
   assert.equal(doc.contract.packageSurcharge, 29);
   assert.equal(doc.contract.downPayment, 5000);
+  // every whole amount comes back unchanged, incl. amounts are always whole francs
+  for (let n = 1; n <= 3000; n++) {
+    const incl = M.vatIncl(n, 8.1);
+    assert.ok(Number.isInteger(incl) && incl >= Math.round(n * 108.1) / 100, `incl ${n}`); // sub-cent fractions do not count
+    assert.equal(M.vatExcl(incl, 8.1), n, `back ${n}`);
+  }
+});
+
+test("insurance upgrade note sits under the model", () => {
+  const s = settingsWithTeam();
+  const doc = offerFixture(s);
+  doc.offer.insuranceDisplay = "note";
+  let v = M.offerView(doc, s).vehicles[0];
+  assert.ok(v.insuranceNotes.length >= 1);
+  assert.match(v.insuranceNotes[0], /^Versicherungs-Upgrade \+ \d+ CHF/);
+  doc.offer.vehicles[0].rows.forEach((r) => (r.insurance = 40));
+  v = M.offerView(doc, s).vehicles[0];
+  assert.deepEqual(plain(v.insuranceNotes), [`Versicherungs-Upgrade +${NB}40${NB}CHF`]);
 });
 
 test("Fix/Flex and start per vehicle go from the offer into the contract", () => {
@@ -288,13 +306,14 @@ test("VAT incl: surcharges are converted too, also when creating the contract", 
   offer.offer.privateSurcharge = 30;
   const view = M.offerView(offer, s);
   const row12 = view.vehicles[0].rows.find((r) => r.months === 12);
-  assert.equal(row12.insurance, 32.43);
-  assert.ok(view.notes[0].includes(`CHF${NB}32.43`));
+  assert.equal(row12.insurance, 33);
+  assert.ok(view.notes[0].includes(`CHF${NB}33`));
   const pick = M.offerOptions(offer).find((o) => o.months === 12 && o.km === 1000);
   const contract = M.contractFromOffer(offer, [pick.key], s);
   assert.equal(contract.contract.vatMode, "incl");
-  assert.equal(contract.contract.items[0].rate, 745.89);
-  assert.equal(contract.contract.insuranceSurcharge, 32.43);
+  assert.equal(contract.contract.items[0].rate, 746);
+  assert.equal(contract.contract.insuranceSurcharge, 33);
+  assert.equal(contract.contract.items[0].extraKmRate, 0.54);
   offer.offer.vatMode = "both";
   assert.match(M.offerView(offer, s).vars.mwst_hinweis, /8\.1% MwSt/);
 });

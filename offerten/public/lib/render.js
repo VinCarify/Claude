@@ -423,17 +423,16 @@ globalThis.CarifyRender = (function () {
   }
 
   function priceRow(vehicle, row, index, view, t, lang) {
-    // The insurance note belongs to one term, so it sits in the term cell (vehicle cells get merged).
-    const showNote = view.insuranceDisplay === "note" && row.insurance != null;
+    const showNote = view.insuranceDisplay === "note" && vehicle.insuranceNotes.length > 0;
     const model = vehicle.link ? h("a", { href: vehicle.link, text: vehicle.model }) : vehicle.model;
     const cells = {
       vehicle: h("td", { class: "col-vehicle" },
         h("strong", { class: "veh-model" }, model),
         vehicle.sub ? h("span", { class: "veh-sub", text: vehicle.sub }) : null,
-        vehicle.start ? h("span", { class: "veh-start", text: `${t.colStart}: ${vehicle.start}` }) : null),
+        vehicle.start ? h("span", { class: "veh-start", text: `${t.colStart}: ${vehicle.start}` }) : null,
+        showNote ? vehicle.insuranceNotes.map((n) => h("span", { class: "veh-note", text: `→ ${n}` })) : null),
       term: h("td", { class: "col-term" },
-        h("span", { text: String(row.months) }),
-        showNote ? h("span", { class: "term-note", text: `→ ${M.fill(t.insuranceNote, { betrag: F.number(row.insurance, lang) })}` }) : null),
+        h("span", { text: String(row.months) })),
       plan: h("td", { class: "col-plan", text: row.plan || "" }),
       km: h("td", { class: "col-km" }, row.lines.map((l) => h("span", { text: F.number(l.km, lang) }))),
       priceExcl: h("td", { class: "col-price" }, row.lines.map((l) => h("span", { text: F.isNum(l.price) ? F.chfAfter(l.price, lang) : "–" }))),

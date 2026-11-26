@@ -32,7 +32,8 @@ Gut zu wissen:
 - **Datum der Offerte** folgt automatisch dem heutigen Tag («Immer heutiges Datum»), bis es von Hand geändert wird.
 - **Abobeginn pro Fahrzeug** (optional) in Offerte und Vertrag; im Vertrag gilt sonst der Abobeginn unter «Konditionen».
 - **Fix / Flex** pro Laufzeit (Offerte) bzw. pro Modell (Vertrag); die Spalte erscheint, sobald ein Wert gesetzt ist.
-- **MwSt im Vertrag**: Umschalten exkl. ↔ inkl. rechnet alle Beträge um (× bzw. ÷ 1.081 bei 8.1 %), auf den Rappen genau.
+- **Preise inkl. MwSt** = exkl. × 1.081, auf ganze Franken aufgerundet (keine Kommazahlen). Im Vertrag rechnet Umschalten exkl. ↔ inkl. alle Beträge um; Mehrkilometer (CHF/km) bleiben auf den Rappen genau.
+- **Versicherungs-Upgrade «beim Fahrzeug»** steht unter dem Modell (bei unterschiedlichen Beträgen je Laufzeit).
 - **Vertrag mit mehreren Modellen**: kompakte Tabelle; passt er nicht auf eine Seite, setzt die App Schrift und Abstände automatisch enger.
 
 ## Lokal

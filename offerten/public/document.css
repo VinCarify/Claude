@@ -932,13 +932,12 @@ img.doc-logo--cover {
   color: var(--d-orange);
 }
 
-.term-note {
+.veh-note {
   display: block;
-  margin-top: 4px;
-  font-size: 10.5px;
+  margin-top: 6px;
+  font-size: 11.5px;
   font-weight: 700;
   line-height: 1.3;
-  overflow-wrap: anywhere;
 }
 
 .col-term {
@@ -963,6 +962,14 @@ td.col-insurance {
 
 .price-table thead th {
   hyphens: auto;
+}
+
+/* "Insurance Upgrade": smaller, wraps only between the words. */
+.price-table thead th.col-insurance {
+  font-size: 12px;
+  hyphens: none;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .price-note {
